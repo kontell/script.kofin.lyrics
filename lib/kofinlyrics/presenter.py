@@ -36,7 +36,10 @@ def log(message: str) -> None:
     This runs once per song and once per hand-over, which is more than a
     normal log wants from an addon that is working.
     """
-    level = xbmc.LOGINFO if settings.debug() else xbmc.LOGDEBUG
+    try:
+        level = xbmc.LOGINFO if settings.debug() else xbmc.LOGDEBUG
+    except Exception:  # never let logging be the thing that fails
+        level = xbmc.LOGDEBUG
     xbmc.log("[kofin-lyrics] %s" % message, level)
 
 

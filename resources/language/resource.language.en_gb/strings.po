@@ -16,7 +16,7 @@ msgid "Show lyrics automatically"
 msgstr ""
 
 msgctxt "#30002"
-msgid "Bring lyrics up on their own as each song starts. Turn this off to show them only when you press the lyrics button on the music OSD."
+msgid "Bring lyrics up on their own as each song starts. Turn this off to show them only when you press the lyrics button on the music OSD.[CR][CR]Skin dependent: when the skin draws the lyrics itself it has to honour this setting. Confirmed with Contuary; other skins may ignore it and show them anyway. This addon's own window always obeys it."
 msgstr ""
 
 msgctxt "#30003"
@@ -24,7 +24,7 @@ msgid "Show lyrics that have no timings"
 msgstr ""
 
 msgctxt "#30004"
-msgid "Some songs on the server have lyrics but no timings. They cannot follow the music, so they are shown as a block that does not move. Turn this off to show nothing for those songs instead."
+msgid "Some songs on the server have lyrics but no timings. They cannot follow the music, so they are shown as a block that does not move. Turn this off to show nothing for those songs instead.[CR][CR]Skin dependent: when the skin draws the lyrics itself it has to honour this setting. Confirmed with Contuary; other skins may ignore it and show them anyway. This addon's own window always obeys it."
 msgstr ""
 
 msgctxt "#30005"

@@ -31,6 +31,11 @@ PROP_INTERACTIVE = "kofin.lyric.interactive"
 # screen. A skin gates its overlay on this rather than on kofin's PROP_HAS,
 # because whether to show them is this addon's decision -- kofin only says
 # that it has some.
+#
+# This is the load-bearing half of the skin contract. showAutomatically and
+# showUntimed are both expressed by *not* raising it, so a skin that gates on
+# anything else silently ignores them. Only skin.contuary is known to honour
+# it; the settings say so, because there is no way to make a skin comply.
 PROP_SHOW = "kofin.lyric.show"
 
 

@@ -22,7 +22,6 @@ from kofinlyrics.summon import PROP_SUMMON
 TICK_SECONDS = 0.25
 
 
-
 def _position() -> Optional[float]:
     try:
         return float(xbmc.Player().getTime())
@@ -39,20 +38,16 @@ def _take_summons() -> bool:
     return True
 
 
-def run() -> None:
-    monitor = xbmc.Monitor()
-    presenter = Presenter()
+def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
     # The published path carries the song id, so it is what tells one song's
     # lyrics from the next. A flag would not: kofin clears and republishes
     # within a single tick on a track change, so "has lyrics" never goes false
     # in between and stale lines would sit there for the whole next song.
     showing = ""
-    log("service started")
 
     while not monitor.abortRequested():
         try:
             audio = xbmc.Player().isPlayingAudio()
-
             published = source.directory_path() if source.has_lyrics() else ""
 
             if not audio or not published:
@@ -78,5 +73,21 @@ def run() -> None:
         if monitor.waitForAbort(TICK_SECONDS):
             break
 
-    presenter.close()
+
+def run() -> None:
+    monitor = xbmc.Monitor()
+    presenter = Presenter()
+    log("service started")
+    try:
+        _loop(monitor, presenter)
+    except Exception as error:  # pragma: no cover - defensive
+        log("service loop failed: %s" % error)
+    finally:
+        # Whatever happened above, the window has to go. One left registered
+        # pins the whole UI to it until Kodi is restarted -- which is what
+        # made a settings read throwing during teardown so expensive.
+        try:
+            presenter.close()
+        except Exception:
+            pass
     log("service stopped")
