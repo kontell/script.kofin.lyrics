@@ -27,6 +27,11 @@ PROP_CONTROL = "kofin.lyric.control"
 # for manual scrolling, so the skin's passive overlay stands aside rather than
 # drawing the same lyrics twice.
 PROP_INTERACTIVE = "kofin.lyric.interactive"
+# Written by us, read by the skin: raised while lyrics should actually be on
+# screen. A skin gates its overlay on this rather than on kofin's PROP_HAS,
+# because whether to show them is this addon's decision -- kofin only says
+# that it has some.
+PROP_SHOW = "kofin.lyric.show"
 
 
 def _window() -> xbmcgui.Window:
@@ -56,6 +61,13 @@ def set_interactive(active: bool) -> None:
         _window().setProperty(PROP_INTERACTIVE, "true")
     else:
         _window().clearProperty(PROP_INTERACTIVE)
+
+
+def set_show(active: bool) -> None:
+    if active:
+        _window().setProperty(PROP_SHOW, "true")
+    else:
+        _window().clearProperty(PROP_SHOW)
 
 
 def published_lines() -> List[LyricLine]:

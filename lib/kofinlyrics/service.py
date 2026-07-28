@@ -15,6 +15,7 @@ import xbmc
 import xbmcgui
 
 from kofinlyrics import lyrics as source
+from kofinlyrics import settings
 from kofinlyrics.presenter import Presenter, log
 from kofinlyrics.summon import PROP_SUMMON
 
@@ -59,8 +60,13 @@ def run() -> None:
                     presenter.stop_song()
                     showing = ""
             elif published != showing:
-                # A song we have not taken up yet, or a new one.
-                presenter.start_song()
+                # A song we have not taken up yet, or a new one. With
+                # showAutomatically off nothing is taken up until the lyrics
+                # button asks for it -- but the song still has to be noticed,
+                # or the previous one's lines would linger.
+                presenter.stop_song()
+                if settings.show_automatically():
+                    presenter.start_song()
                 showing = published
             else:
                 if _take_summons():

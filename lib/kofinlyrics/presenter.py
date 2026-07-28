@@ -20,6 +20,7 @@ import xbmc
 import xbmcaddon
 
 from kofinlyrics import lyrics as source
+from kofinlyrics import settings
 from kofinlyrics.window import XML_FILENAME, LyricsWindow
 
 ADDON = xbmcaddon.Addon()
@@ -30,7 +31,13 @@ WINDOW_VISUALISATION = 12006
 
 
 def log(message: str) -> None:
-    xbmc.log("[kofin-lyrics] %s" % message, xbmc.LOGINFO)
+    """Chatty at INFO only when asked; otherwise it stays in the debug log.
+
+    This runs once per song and once per hand-over, which is more than a
+    normal log wants from an addon that is working.
+    """
+    level = xbmc.LOGINFO if settings.debug() else xbmc.LOGDEBUG
+    xbmc.log("[kofin-lyrics] %s" % message, level)
 
 
 def _skin_list_position(control: int) -> int:
@@ -65,13 +72,19 @@ class Presenter:
         lines = source.published_lines()
         if not lines:
             return
+        timed = source.is_timed(lines)
+        if not timed and not settings.show_untimed():
+            log("%d lines, but untimed lyrics are turned off" % len(lines))
+            return
         self._lines = lines
-        self._following = source.is_timed(lines)
+        self._following = timed
         self._sent = None
         self._confirmed = False
-        log("%d lines%s" % (len(lines), "" if self._following else " (untimed)"))
+        source.set_show(True)
+        log("%d lines%s" % (len(lines), "" if timed else " (untimed)"))
 
     def stop_song(self) -> None:
+        source.set_show(False)
         self._leave_interactive()
         self._close_window()
         self._lines = []
@@ -88,6 +101,14 @@ class Presenter:
         our own gets ordinary navigation -- so that is what scrolling means
         here, with the skin's overlay standing aside while it is up.
         """
+        if not self._lines:
+            # Nothing taken up yet -- showAutomatically is off, or the viewer
+            # dismissed the window earlier in this song. Take them up now and
+            # carry straight on into the hand-over: one press, lyrics you can
+            # scroll.
+            self.start_song()
+            if not self._lines:
+                return
         if source.skin_control_id() and not self._interactive:
             self._interactive = True
             source.set_interactive(True)
@@ -221,4 +242,4 @@ class Presenter:
     def _active(self, position: Optional[float]) -> Optional[int]:
         if position is None:
             return None
-        return source.active_index(self._lines, position)
+        return source.active_index(self._lines, position - settings.offset())

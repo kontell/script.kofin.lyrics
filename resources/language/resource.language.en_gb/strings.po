@@ -1,0 +1,44 @@
+# Kodi Media Center language file
+# Addon Name: Kofin Lyrics
+# Addon id: script.kofin.lyrics
+# Addon Provider: kontell
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en_GB\n"
+
+msgctxt "#30000"
+msgid "General"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Show lyrics automatically"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Bring lyrics up on their own as each song starts. Turn this off to show them only when you press the lyrics button on the music OSD."
+msgstr ""
+
+msgctxt "#30003"
+msgid "Show lyrics that have no timings"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Some songs on the server have lyrics but no timings. They cannot follow the music, so they are shown as a block that does not move. Turn this off to show nothing for those songs instead."
+msgstr ""
+
+msgctxt "#30005"
+msgid "Timing offset (seconds)"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Shift the lyrics in time against the music. Increase this if the lines arrive too early, decrease it if they arrive too late."
+msgstr ""
+
+msgctxt "#30007"
+msgid "Enable debug logging"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Write what this addon is doing to the Kodi log. Leave this off unless you are chasing a problem."
+msgstr ""
