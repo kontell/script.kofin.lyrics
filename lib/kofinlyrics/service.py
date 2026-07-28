@@ -64,9 +64,7 @@ def run() -> None:
                 showing = published
             else:
                 if _take_summons():
-                    # The viewer asked for the lyrics back after closing them;
-                    # re-adopt so the window reopens.
-                    presenter.start_song()
+                    presenter.summon()
                 presenter.tick(_position())
         except Exception as error:  # never let a tick kill the service
             log("tick failed: %s" % error)

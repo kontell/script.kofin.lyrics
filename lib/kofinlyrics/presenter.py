@@ -76,6 +76,24 @@ class Presenter:
         self._following = False
         self._confirmed = False
 
+    def summon(self) -> None:
+        """Bring the lyrics to the front, and hand them to the viewer.
+
+        Deliberately stops following: the only reason to ask for the lyrics
+        that are already on screen is to scroll them yourself.
+        """
+        control = source.skin_control_id()
+        if control:
+            self._following = False
+            xbmc.executebuiltin("SetFocus(%d)" % control)
+            log("handed the skin's list to the viewer")
+            return
+        if self._window is None or self._window.closed:
+            self._window = None
+            self.start_song()
+        elif self._window is not None:
+            self._window.scrolled = True
+
     def close(self) -> None:
         self.stop_song()
 
@@ -111,6 +129,13 @@ class Presenter:
         if not self._following:
             return
         where = _skin_list_position(control)
+        if where < 0:
+            # Not readable from here. Container(...) resolves against whatever
+            # window is active, so anything over the visualisation screen --
+            # the OSD, a dialog -- hides the list from us. Unreadable is not
+            # the same as moved: treating it as a manual scroll stood us down
+            # for the rest of the song every time the OSD was opened.
+            return
 
         # Until the list has agreed with us once, a mismatch means our command
         # went nowhere -- the directory loads asynchronously, so the opening

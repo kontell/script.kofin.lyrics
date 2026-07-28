@@ -20,12 +20,12 @@ def summon() -> None:
     if not source.has_lyrics():
         xbmc.log("[kofin-lyrics] summoned with no lyrics to show", xbmc.LOGINFO)
         return
-    control = source.skin_control_id()
-    if control:
-        # A skin is drawing: hand it the focus so the viewer can scroll. No
-        # round trip through the service needed for that.
-        xbmc.executebuiltin("SetFocus(%d)" % control)
-        return
+    # Always through the service, never straight to SetFocus from here. A
+    # skin's lyrics button closes its OSD in the same click, and the builtins
+    # do not wait for each other -- focusing from this process targets the OSD
+    # that is still up, so the focus never reaches the list. By the next
+    # service tick the OSD has gone.
+    #
     # Timestamped so a second press is a distinct event rather than a no-op
     # against a flag that is already raised.
     xbmcgui.Window(source.HOME_WINDOW).setProperty(PROP_SUMMON, str(time.time()))
