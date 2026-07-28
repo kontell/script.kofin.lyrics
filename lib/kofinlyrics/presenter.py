@@ -75,18 +75,26 @@ class Presenter:
     # -- lifecycle ----------------------------------------------------------
 
     def start_song(self) -> None:
-        """Take up whatever kofin has published for the song now playing."""
-        self.stop_song()
+        """Take up whatever kofin has published for the song now playing.
+
+        An open window is refilled rather than closed and reopened: it is the
+        same panel showing the next track, and tearing it down between songs
+        made it flash out and back on every change.
+        """
         lines = source.published_lines()
         if not lines:
+            self.stop_song()
             return
         timed = source.is_timed(lines)
         if not timed and not settings.show_untimed():
             log("%d lines, but untimed lyrics are turned off" % len(lines))
+            self.stop_song()
             return
         self._lines = lines
         self._following = timed
         self._sent = None
+        if self._window is not None and not self._window.closed:
+            self._window.set_lines([text for _, text in lines])
         source.set_show(True)
         log("%d lines%s" % (len(lines), "" if timed else " (untimed)"))
 
@@ -274,6 +282,15 @@ class Presenter:
         select(active)
 
     def _active(self, position: Optional[float]) -> Optional[int]:
+        """Which line to sit on, or None when there is nothing to follow.
+
+        Before the first stamped line there is no line playing, but leaving
+        the list unselected shows a panel with nothing picked out at all. The
+        first line is the one about to be sung, so it waits there.
+        """
         if position is None:
             return None
-        return source.active_index(self._lines, position - settings.offset())
+        active = source.active_index(self._lines, position - settings.offset())
+        if active is None and self._following:
+            return 0
+        return active

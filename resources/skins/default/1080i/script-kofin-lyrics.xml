@@ -30,13 +30,13 @@
 				<effect type="fade" start="100" end="0" time="300"/>
 			</animation>
 			<right>40</right>
-			<width>640</width>
+			<width>800</width>
 			<top>100</top>
 			<height>800</height>
 			<control type="image" id="101">
 				<left>0</left>
 				<top>0</top>
-				<width>640</width>
+				<width>800</width>
 				<height>800</height>
 				<texture colordiffuse="CC000000">white.png</texture>
 				<aspectratio>stretch</aspectratio>
@@ -44,7 +44,7 @@
 			<control type="label" id="102">
 				<left>20</left>
 				<top>10</top>
-				<width>600</width>
+				<width>760</width>
 				<height>44</height>
 				<font>font13</font>
 				<textcolor>FF00A4DC</textcolor>
@@ -59,32 +59,34 @@
 			<control type="list" id="100">
 				<left>20</left>
 				<top>60</top>
-				<width>600</width>
+				<width>760</width>
 				<height>720</height>
 				<scrolltime tween="sine" easing="out">350</scrolltime>
 				<onup>100</onup>
 				<ondown>100</ondown>
 				<onleft>100</onleft>
 				<onright>100</onright>
-				<itemlayout height="60" width="600">
+				<itemlayout height="60" width="760">
 					<control type="label">
-						<width>600</width>
+						<width>760</width>
 						<height>60</height>
 						<font>font13</font>
 						<textcolor>B3FFFFFF</textcolor>
 						<align>center</align>
 						<aligny>center</aligny>
+						<scroll>true</scroll>
 						<label>$INFO[ListItem.Label]</label>
 					</control>
 				</itemlayout>
-				<focusedlayout height="60" width="600">
+				<focusedlayout height="60" width="760">
 					<control type="label">
-						<width>600</width>
+						<width>760</width>
 						<height>60</height>
 						<font>font14</font>
 						<textcolor>FFFFFFFF</textcolor>
 						<align>center</align>
 						<aligny>center</aligny>
+						<scroll>true</scroll>
 						<label>$INFO[ListItem.Label]</label>
 					</control>
 				</focusedlayout>

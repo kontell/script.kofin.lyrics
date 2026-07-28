@@ -14,16 +14,17 @@ TITLE_ID = 102
 XML_FILENAME = "script-kofin-lyrics.xml"
 
 # The panel as authored, and how narrow it may shrink to.
-FULL_WIDTH = 640
+FULL_WIDTH = 800
 MIN_WIDTH = 300
 # The list is authored 600 wide inside a 640 panel, its text centred.
-LIST_WIDTH = 600
+LIST_WIDTH = 760
 LIST_LEFT = 20
 
 # Nothing in Kodi measures rendered text, so line length is estimated from
-# character count. Tuned by eye against the default font at this size; a wrong
-# guess only means the panel hugs the words a little loosely or tightly.
-CHAR_WIDTH = 16
+# character count. Deliberately generous: over-estimating only costs a panel
+# wider than it needed to be, and the width is clamped anyway, while
+# under-estimating cuts the words off.
+CHAR_WIDTH = 20
 PADDING = 80
 
 ACTION_PARENT_DIR = 9
@@ -57,6 +58,17 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             # A blank line still occupies a row: lines are addressed by index,
             # so dropping empties would shift every line after one.
             self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
+        self.fit_to(self._lines)
+
+    def set_lines(self, lines: List[str]) -> None:
+        """Replace the lines in an already-open window, for the next track."""
+        self._lines = list(lines)
+        if self._list is None:
+            return
+        self._list.reset()
+        for line in self._lines:
+            self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
+        self.scrolled = False
         self.fit_to(self._lines)
 
     def fit_to(self, lines: List[str]) -> None:
