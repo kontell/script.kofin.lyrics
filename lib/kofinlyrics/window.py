@@ -9,7 +9,22 @@ from typing import Any, List, Optional
 import xbmcgui
 
 LIST_ID = 100
+PANEL_ID = 101
+TITLE_ID = 102
 XML_FILENAME = "script-kofin-lyrics.xml"
+
+# The panel as authored, and how narrow it may shrink to.
+FULL_WIDTH = 640
+MIN_WIDTH = 300
+# The list is authored 600 wide inside a 640 panel, its text centred.
+LIST_WIDTH = 600
+LIST_LEFT = 20
+
+# Nothing in Kodi measures rendered text, so line length is estimated from
+# character count. Tuned by eye against the default font at this size; a wrong
+# guess only means the panel hugs the words a little loosely or tightly.
+CHAR_WIDTH = 16
+PADDING = 80
 
 ACTION_PARENT_DIR = 9
 ACTION_PREVIOUS_MENU = 10
@@ -42,6 +57,36 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             # A blank line still occupies a row: lines are addressed by index,
             # so dropping empties would shift every line after one.
             self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
+        self.fit_to(self._lines)
+
+    def fit_to(self, lines: List[str]) -> None:
+        """Shrink the panel to the longest line, never past the authored width.
+
+        Only the panel and the two controls move: the list keeps its authored
+        width because an <itemlayout> cannot be resized at runtime, so the text
+        would stop being centred if it did. Instead the list is shifted so its
+        centre stays on the panel's centre, and its overhang is harmless --
+        the lines are shorter than the panel by construction.
+        """
+        if self._list is None:
+            return
+        longest = max((len(line) for line in lines), default=0)
+        width = min(FULL_WIDTH, max(MIN_WIDTH, longest * CHAR_WIDTH + PADDING))
+        if width >= FULL_WIDTH:
+            return
+        left = FULL_WIDTH - width  # right edge stays where it was authored
+        try:
+            panel = self.getControl(PANEL_ID)
+            panel.setWidth(width)
+            panel.setPosition(left, 0)
+            title = self.getControl(TITLE_ID)
+            title.setWidth(width - 2 * LIST_LEFT)
+            title.setPosition(left + LIST_LEFT, 10)
+            # Half the shrink: the list's text centres on its own authored
+            # width, so moving it half way keeps that centre on the panel's.
+            self._list.setPosition(LIST_LEFT + left // 2, 60)
+        except Exception:  # pragma: no cover - window torn down under us
+            pass
 
     def highlight(self, index: int) -> None:
         if self._list is None or self.scrolled:

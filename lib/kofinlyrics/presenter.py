@@ -29,6 +29,12 @@ ADDON_PATH = ADDON.getAddonInfo("path")
 # The visualisation window. The addon's own window is only ever shown here.
 WINDOW_VISUALISATION = 12006
 
+# How far below the sung line the list is nudged before the cursor is put back
+# on it. See _position_list. Roughly half the visible rows: 13 for contuary's
+# overlay, 12 for our own window.
+SKIN_LEAD_ROWS = 6
+WINDOW_LEAD_ROWS = 5
+
 
 def log(message: str) -> None:
     """Chatty at INFO only when asked; otherwise it stays in the debug log.
@@ -168,15 +174,30 @@ class Presenter:
         """
         if not self._following:
             return
+        where = _skin_list_position(control)
+        if where < 0:
+            # Not addressable. Container(...) resolves against the active
+            # window, so while the OSD is up the list cannot be read -- and
+            # must not be written either: Control.SetFocus acts on the active
+            # window too, so driving here fires it into the OSD every tick and
+            # takes the focus off whatever the viewer is using.
+            return
         active = self._active(position)
         if active is None:
             return
-        if active == self._sent and _skin_list_position(control) == active:
+        if active == self._sent and where == active:
             return
         self._sent = active
-        # absolute: without it the position is taken relative to the visible
-        # page, which lands on a different line every time the list scrolls.
-        xbmc.executebuiltin("Control.SetFocus(%d,%d,absolute)" % (control, active))
+        self._position_list(
+            lambda index: xbmc.executebuiltin(
+                # absolute: without it the position is taken relative to the
+                # visible page, which lands on a different line every time the
+                # list scrolls.
+                "Control.SetFocus(%d,%d,absolute)" % (control, index)
+            ),
+            active,
+            SKIN_LEAD_ROWS,
+        )
 
     # -- driving our own window ---------------------------------------------
 
@@ -202,7 +223,8 @@ class Presenter:
         if active is None or active == self._sent:
             return
         self._sent = active
-        self._window.highlight(active)
+        window = self._window
+        self._position_list(window.highlight, active, WINDOW_LEAD_ROWS)
 
     def _open_window(self) -> None:
         try:
@@ -231,6 +253,25 @@ class Presenter:
             self._window = None
 
     # -- shared -------------------------------------------------------------
+
+    @staticmethod
+    def _position_list(select, active: int, lead: int) -> None:
+        """Put ``active`` on the list, sitting mid-panel once it gets there.
+
+        A list only scrolls when the cursor reaches the edge of the view, so
+        selecting the sung line alone walks the cursor from the top down to
+        the *bottom* row and scrolls from there -- the line ends up at the
+        foot of the panel rather than the middle.
+
+        Selecting a line ``lead`` further on first drags the view down so that
+        line sits at the bottom, which leaves the sung line ``lead`` rows above
+        it; putting the cursor back on it then moves no view, because it is
+        already showing. Early in a track neither selection scrolls anything,
+        so the cursor simply walks down from the top, which is what we want
+        there.
+        """
+        select(active + lead)
+        select(active)
 
     def _active(self, position: Optional[float]) -> Optional[int]:
         if position is None:

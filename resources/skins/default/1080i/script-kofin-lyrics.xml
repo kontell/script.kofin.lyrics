@@ -3,8 +3,11 @@
      themselves. Centred and self-contained: stock textures only, since a skin
      that knows nothing about us cannot be relied on for art.
 
-     A fixedlist, so the line being sung is held on one row while Kodi scrolls
-     the song past it. The service selects the row; <scrolltime> animates it.
+     A plain list, not a fixedlist. A fixedlist pins the sung line to one row
+     from the very first line, so a track opens with the words mid-panel and
+     blank space above them. A plain list lets the cursor walk down from the
+     top, and the presenter scrolls it once the line reaches the middle -- see
+     Presenter._position_list.
 
      Shown only over the visualisation window, which is the one place where
      taking input costs nothing -- an addon window becomes the active window,
@@ -30,7 +33,7 @@
 			<width>640</width>
 			<top>100</top>
 			<height>800</height>
-			<control type="image">
+			<control type="image" id="101">
 				<left>0</left>
 				<top>0</top>
 				<width>640</width>
@@ -38,7 +41,7 @@
 				<texture colordiffuse="CC000000">white.png</texture>
 				<aspectratio>stretch</aspectratio>
 			</control>
-			<control type="label">
+			<control type="label" id="102">
 				<left>20</left>
 				<top>10</top>
 				<width>600</width>
@@ -47,15 +50,17 @@
 				<textcolor>FF00A4DC</textcolor>
 				<align>center</align>
 				<aligny>center</aligny>
+				<!-- Scrolls rather than truncating: the panel is sized to the
+				     lyrics, and an artist and title together are routinely
+				     longer than any line of the song. -->
+				<scroll>true</scroll>
 				<label>$INFO[MusicPlayer.Artist] - $INFO[MusicPlayer.Title]</label>
 			</control>
-			<control type="fixedlist" id="100">
+			<control type="list" id="100">
 				<left>20</left>
 				<top>60</top>
 				<width>600</width>
 				<height>720</height>
-				<!-- 12 rows of 60; row 5 holds the line being sung. -->
-				<focusposition>5</focusposition>
 				<scrolltime tween="sine" easing="out">350</scrolltime>
 				<onup>100</onup>
 				<ondown>100</ondown>
