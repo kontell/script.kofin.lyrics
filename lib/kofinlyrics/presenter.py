@@ -54,6 +54,8 @@ class Presenter:
         self._sent: Optional[int] = None
         self._following = False
         self._confirmed = False
+        # Our own window has taken over from a skin's overlay for scrolling.
+        self._interactive = False
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -70,6 +72,7 @@ class Presenter:
         log("%d lines%s" % (len(lines), "" if self._following else " (untimed)"))
 
     def stop_song(self) -> None:
+        self._leave_interactive()
         self._close_window()
         self._lines = []
         self._sent = None
@@ -77,22 +80,24 @@ class Presenter:
         self._confirmed = False
 
     def summon(self) -> None:
-        """Bring the lyrics to the front, and hand them to the viewer.
+        """Hand the lyrics to the viewer to scroll.
 
-        Deliberately stops following: the only reason to ask for the lyrics
-        that are already on screen is to scroll them yourself.
+        A skin's overlay cannot take the arrow keys however it is focused:
+        Kodi's keymap binds them to StepBack/SkipNext for the whole
+        visualisation window, so they never reach a control. Only a window of
+        our own gets ordinary navigation -- so that is what scrolling means
+        here, with the skin's overlay standing aside while it is up.
         """
-        control = source.skin_control_id()
-        if control:
-            self._following = False
-            xbmc.executebuiltin("SetFocus(%d)" % control)
-            log("handed the skin's list to the viewer")
+        if source.skin_control_id() and not self._interactive:
+            self._interactive = True
+            source.set_interactive(True)
+            self._sent = None
+            log("handing over to our own window for scrolling")
             return
         if self._window is None or self._window.closed:
             self._window = None
-            self.start_song()
-        elif self._window is not None:
-            self._window.scrolled = True
+            self._sent = None
+            self._lines = source.published_lines()
 
     def close(self) -> None:
         self.stop_song()
@@ -107,7 +112,7 @@ class Presenter:
         visualisation = xbmc.getCondVisibility(
             "Window.IsVisible(%d)" % WINDOW_VISUALISATION
         )
-        control = source.skin_control_id()
+        control = 0 if self._interactive else source.skin_control_id()
 
         if control:
             # The skin draws. Our own window must not also be up -- that is the
@@ -166,9 +171,16 @@ class Presenter:
         if self._window is None:
             return
         if self._window.closed:
-            # Dismissed by the viewer; leave it shut for this song.
-            self._lines = []
             self._window = None
+            if self._interactive:
+                # Handed back: the skin's overlay draws again, following the
+                # music once more.
+                self._leave_interactive()
+                self._following = source.is_timed(self._lines)
+                self._sent = None
+                self._confirmed = False
+            else:
+                self._lines = []  # dismissed; leave it shut for this song
             return
         if not self._following or self._window.scrolled:
             return
@@ -193,6 +205,11 @@ class Presenter:
         except Exception as error:  # pragma: no cover - defensive
             log("could not open the lyrics window: %s" % error)
             self._window = None
+
+    def _leave_interactive(self) -> None:
+        if self._interactive:
+            self._interactive = False
+            source.set_interactive(False)
 
     def _close_window(self) -> None:
         if self._window is not None:

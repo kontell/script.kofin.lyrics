@@ -23,6 +23,10 @@ PROP_PATH = "kofin.lyric.path"
 # control to drive. Its presence is what makes this addon keep its own window
 # shut -- see service.py.
 PROP_CONTROL = "kofin.lyric.control"
+# Written by us, read by the skin: raised while our own window has taken over
+# for manual scrolling, so the skin's passive overlay stands aside rather than
+# drawing the same lyrics twice.
+PROP_INTERACTIVE = "kofin.lyric.interactive"
 
 
 def _window() -> xbmcgui.Window:
@@ -45,6 +49,13 @@ def skin_control_id() -> int:
         return int(_window().getProperty(PROP_CONTROL))
     except (TypeError, ValueError):
         return 0
+
+
+def set_interactive(active: bool) -> None:
+    if active:
+        _window().setProperty(PROP_INTERACTIVE, "true")
+    else:
+        _window().clearProperty(PROP_INTERACTIVE)
 
 
 def published_lines() -> List[LyricLine]:

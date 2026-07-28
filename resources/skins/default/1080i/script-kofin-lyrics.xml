@@ -8,7 +8,14 @@
 
      Shown only over the visualisation window, which is the one place where
      taking input costs nothing -- an addon window becomes the active window,
-     so anywhere else it would swallow navigation. -->
+     so anywhere else it would swallow navigation.
+
+     It is also the only place lyrics can be scrolled by hand. Kodi's keymap
+     binds the arrow keys in the visualisation window to StepBack/SkipNext, so
+     a list a skin draws there never sees them however it is focused; a window
+     of our own gets ordinary navigation. Hence a skin's passive overlay hands
+     over to this on demand. Geometry matches contuary's overlay so that reads
+     as the same panel waking up. -->
 <window>
 	<defaultcontrol always="true">100</defaultcontrol>
 	<controls>
@@ -19,23 +26,23 @@
 			<animation type="WindowClose" reversible="false">
 				<effect type="fade" start="100" end="0" time="300"/>
 			</animation>
-			<left>460</left>
-			<top>120</top>
-			<width>1000</width>
-			<height>840</height>
+			<right>40</right>
+			<width>640</width>
+			<top>100</top>
+			<height>800</height>
 			<control type="image">
 				<left>0</left>
 				<top>0</top>
-				<width>1000</width>
-				<height>840</height>
+				<width>640</width>
+				<height>800</height>
 				<texture colordiffuse="CC000000">white.png</texture>
 				<aspectratio>stretch</aspectratio>
 			</control>
 			<control type="label">
-				<left>30</left>
-				<top>16</top>
-				<width>940</width>
-				<height>48</height>
+				<left>20</left>
+				<top>10</top>
+				<width>600</width>
+				<height>44</height>
 				<font>font13</font>
 				<textcolor>FF00A4DC</textcolor>
 				<align>center</align>
@@ -43,21 +50,21 @@
 				<label>$INFO[MusicPlayer.Artist] - $INFO[MusicPlayer.Title]</label>
 			</control>
 			<control type="fixedlist" id="100">
-				<left>30</left>
-				<top>76</top>
-				<width>940</width>
-				<height>744</height>
-				<!-- 12 rows of 62; row 5 holds the line being sung. -->
+				<left>20</left>
+				<top>60</top>
+				<width>600</width>
+				<height>720</height>
+				<!-- 12 rows of 60; row 5 holds the line being sung. -->
 				<focusposition>5</focusposition>
 				<scrolltime tween="sine" easing="out">350</scrolltime>
 				<onup>100</onup>
 				<ondown>100</ondown>
 				<onleft>100</onleft>
 				<onright>100</onright>
-				<itemlayout height="62" width="940">
+				<itemlayout height="60" width="600">
 					<control type="label">
-						<width>940</width>
-						<height>62</height>
+						<width>600</width>
+						<height>60</height>
 						<font>font13</font>
 						<textcolor>B3FFFFFF</textcolor>
 						<align>center</align>
@@ -65,10 +72,10 @@
 						<label>$INFO[ListItem.Label]</label>
 					</control>
 				</itemlayout>
-				<focusedlayout height="62" width="940">
+				<focusedlayout height="60" width="600">
 					<control type="label">
-						<width>940</width>
-						<height>62</height>
+						<width>600</width>
+						<height>60</height>
 						<font>font14</font>
 						<textcolor>FFFFFFFF</textcolor>
 						<align>center</align>
