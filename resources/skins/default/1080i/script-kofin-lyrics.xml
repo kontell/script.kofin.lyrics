@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This addon's own lyrics window, used on skins that do not draw lyrics
+     themselves. Centred and self-contained: stock textures only, since a skin
+     that knows nothing about us cannot be relied on for art.
+
+     A fixedlist, so the line being sung is held on one row while Kodi scrolls
+     the song past it. The service selects the row; <scrolltime> animates it.
+
+     Shown only over the visualisation window, which is the one place where
+     taking input costs nothing -- an addon window becomes the active window,
+     so anywhere else it would swallow navigation. -->
+<window>
+	<defaultcontrol always="true">100</defaultcontrol>
+	<controls>
+		<control type="group">
+			<animation type="WindowOpen" reversible="false">
+				<effect type="fade" start="0" end="100" time="300"/>
+			</animation>
+			<animation type="WindowClose" reversible="false">
+				<effect type="fade" start="100" end="0" time="300"/>
+			</animation>
+			<left>460</left>
+			<top>120</top>
+			<width>1000</width>
+			<height>840</height>
+			<control type="image">
+				<left>0</left>
+				<top>0</top>
+				<width>1000</width>
+				<height>840</height>
+				<texture colordiffuse="CC000000">white.png</texture>
+				<aspectratio>stretch</aspectratio>
+			</control>
+			<control type="label">
+				<left>30</left>
+				<top>16</top>
+				<width>940</width>
+				<height>48</height>
+				<font>font13</font>
+				<textcolor>FF00A4DC</textcolor>
+				<align>center</align>
+				<aligny>center</aligny>
+				<label>$INFO[MusicPlayer.Artist] - $INFO[MusicPlayer.Title]</label>
+			</control>
+			<control type="fixedlist" id="100">
+				<left>30</left>
+				<top>76</top>
+				<width>940</width>
+				<height>744</height>
+				<!-- 12 rows of 62; row 5 holds the line being sung. -->
+				<focusposition>5</focusposition>
+				<scrolltime tween="sine" easing="out">350</scrolltime>
+				<onup>100</onup>
+				<ondown>100</ondown>
+				<onleft>100</onleft>
+				<onright>100</onright>
+				<itemlayout height="62" width="940">
+					<control type="label">
+						<width>940</width>
+						<height>62</height>
+						<font>font13</font>
+						<textcolor>B3FFFFFF</textcolor>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[ListItem.Label]</label>
+					</control>
+				</itemlayout>
+				<focusedlayout height="62" width="940">
+					<control type="label">
+						<width>940</width>
+						<height>62</height>
+						<font>font14</font>
+						<textcolor>FFFFFFFF</textcolor>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[ListItem.Label]</label>
+					</control>
+				</focusedlayout>
+			</control>
+		</control>
+	</controls>
+</window>
