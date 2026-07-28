@@ -63,7 +63,6 @@ class Presenter:
         self._window: Optional[LyricsWindow] = None
         self._sent: Optional[int] = None
         self._following = False
-        self._confirmed = False
         # Our own window has taken over from a skin's overlay for scrolling.
         self._interactive = False
 
@@ -82,7 +81,6 @@ class Presenter:
         self._lines = lines
         self._following = timed
         self._sent = None
-        self._confirmed = False
         source.set_show(True)
         log("%d lines%s" % (len(lines), "" if timed else " (untimed)"))
 
@@ -93,7 +91,6 @@ class Presenter:
         self._lines = []
         self._sent = None
         self._following = False
-        self._confirmed = False
 
     def summon(self) -> None:
         """Hand the lyrics to the viewer to scroll.
@@ -155,32 +152,26 @@ class Presenter:
     # -- driving a skin's list ----------------------------------------------
 
     def _drive_skin(self, control: int, position: Optional[float]) -> None:
+        """Keep a skin's list on the line being sung.
+
+        Nothing here watches for the viewer scrolling, because in a skin's
+        list they cannot: Kodi's keymap spends the arrow keys on
+        StepBack/SkipNext for the whole visualisation window, so they never
+        reach the control. Scrolling by hand is what the interactive window is
+        for.
+
+        That makes any divergence ours to correct rather than theirs to keep,
+        so this re-asserts instead of standing down. Three separate bugs came
+        from the older reading -- the OSD, a hidden overlay and an unloaded
+        list each moved the position somewhere we had not put it, and each
+        looked exactly like a manual scroll.
+        """
         if not self._following:
             return
-        where = _skin_list_position(control)
-        if where < 0:
-            # Not readable from here. Container(...) resolves against whatever
-            # window is active, so anything over the visualisation screen --
-            # the OSD, a dialog -- hides the list from us. Unreadable is not
-            # the same as moved: treating it as a manual scroll stood us down
-            # for the rest of the song every time the OSD was opened.
-            return
-
-        # Until the list has agreed with us once, a mismatch means our command
-        # went nowhere -- the directory loads asynchronously, so the opening
-        # move usually lands in an empty list. Re-issue rather than read that
-        # as the viewer scrolling, which would stand us down for the whole
-        # song before the first line ever lit.
-        if not self._confirmed:
-            if self._sent is not None and where == self._sent:
-                self._confirmed = True
-        elif self._sent is not None and where != self._sent:
-            self._following = False
-            log("yielding to manual scroll")
-            return
-
         active = self._active(position)
-        if active is None or (active == self._sent and self._confirmed):
+        if active is None:
+            return
+        if active == self._sent and _skin_list_position(control) == active:
             return
         self._sent = active
         # absolute: without it the position is taken relative to the visible
@@ -202,7 +193,6 @@ class Presenter:
                 self._leave_interactive()
                 self._following = source.is_timed(self._lines)
                 self._sent = None
-                self._confirmed = False
             else:
                 self._lines = []  # dismissed; leave it shut for this song
             return
