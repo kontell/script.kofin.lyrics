@@ -14,7 +14,7 @@ Following stands down the moment the viewer scrolls for themselves, and the
 next song takes it back.
 """
 
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import xbmc
 import xbmcaddon
@@ -201,7 +201,8 @@ class Presenter:
                 # absolute: without it the position is taken relative to the
                 # visible page, which lands on a different line every time the
                 # list scrolls.
-                "Control.SetFocus(%d,%d,absolute)" % (control, index)
+                "Control.SetFocus(%d,%d,absolute)"
+                % (control, index)
             ),
             active,
             SKIN_LEAD_ROWS,
@@ -263,7 +264,7 @@ class Presenter:
     # -- shared -------------------------------------------------------------
 
     @staticmethod
-    def _position_list(select, active: int, lead: int) -> None:
+    def _position_list(select: Callable[[int], None], active: int, lead: int) -> None:
         """Put ``active`` on the list, sitting mid-panel once it gets there.
 
         A list only scrolls when the cursor reaches the edge of the view, so

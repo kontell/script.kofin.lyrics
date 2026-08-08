@@ -4,7 +4,7 @@ Owning the window means the list can be driven directly with selectItem
 rather than through the Control.SetFocus builtin a skin's list needs.
 """
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, cast
 
 import xbmcgui
 
@@ -50,7 +50,13 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
 
     def onInit(self) -> None:
         try:
-            self._list = self.getControl(LIST_ID)
+            # getControl is declared to return the Control base class; LIST_ID
+            # addresses the <control type="list"> in script-kofin-lyrics.xml, and
+            # addItem/reset/selectItem below already depend on that. The cast
+            # states the invariant rather than widening the attribute, so a
+            # future LIST_ID pointing at a non-list fails type-checking here
+            # instead of at the first addItem on a live window.
+            self._list = cast(xbmcgui.ControlList, self.getControl(LIST_ID))
         except Exception:  # pragma: no cover - window torn down mid-init
             self._list = None
             return
