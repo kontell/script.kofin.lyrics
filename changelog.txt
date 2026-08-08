@@ -1,0 +1,6 @@
+[B]0.1.0[/B]
+• First release. Shows the song lyrics stored on a Jellyfin server as a track plays, in time with the music where the server has timings
+• Lines come from the Kofin add-on, which fetches them as playback starts, so there is no second login and nothing is scraped from the internet
+• Skins that draw lyrics themselves are used in preference to this add-on's own window; Contuary 2.2.0 and later does
+• Press the lyrics button on the music OSD to take the lyrics over and scroll them by hand
+• Settings for automatic display, a timing offset, whether to show lyrics that carry no timings, and debug logging
