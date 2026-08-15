@@ -16,8 +16,7 @@ XML_FILENAME = "script-kofin-lyrics.xml"
 # The panel as authored, and how narrow it may shrink to.
 FULL_WIDTH = 800
 MIN_WIDTH = 300
-# The list is authored 600 wide inside a 640 panel, its text centred.
-LIST_WIDTH = 760
+# The inset of the list and the title inside the panel, on both sides.
 LIST_LEFT = 20
 
 # Nothing in Kodi measures rendered text, so line length is estimated from
@@ -78,20 +77,26 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         self.fit_to(self._lines)
 
     def fit_to(self, lines: List[str]) -> None:
-        """Shrink the panel to the longest line, never past the authored width.
+        """Size the panel to the longest line, never past the authored width.
 
         Only the panel and the two controls move: the list keeps its authored
         width because an <itemlayout> cannot be resized at runtime, so the text
         would stop being centred if it did. Instead the list is shifted so its
         centre stays on the panel's centre, and its overhang is harmless --
         the lines are shorter than the panel by construction.
+
+        Written unconditionally, including at the full width, because the
+        window is refilled across track changes rather than reopened. Returning
+        early once the lines no longer need shrinking left the *previous*
+        track's narrow panel in place: the list is re-centred on the panel, so
+        the next track's longer lines drew centred on a panel 500 too far left
+        and ran off the right of the screen, clipped and unbacked. At the full
+        width the arithmetic below reproduces the authored geometry exactly.
         """
         if self._list is None:
             return
         longest = max((len(line) for line in lines), default=0)
         width = min(FULL_WIDTH, max(MIN_WIDTH, longest * CHAR_WIDTH + PADDING))
-        if width >= FULL_WIDTH:
-            return
         left = FULL_WIDTH - width  # right edge stays where it was authored
         try:
             panel = self.getControl(PANEL_ID)
