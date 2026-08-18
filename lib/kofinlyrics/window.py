@@ -38,8 +38,12 @@ HOME_WINDOW = 10000
 # and this window's id is only known at runtime.
 PROP_MEASURE = "kofin.lyric.measure"
 
-# The panel as authored, and how narrow it may shrink to.
-FULL_WIDTH = 800
+# The panel as authored, and how narrow it may shrink to. The authored width
+# is the ceiling the measurement can grow the panel to, so it is set for the
+# longest lines real songs carry -- a 74-character line renders ~1120px at
+# font14, and an 800 ceiling kept every such song clamped with its lines
+# truncated. The right edge stays anchored; only the left edge moves.
+FULL_WIDTH = 1240
 MIN_WIDTH = 300
 # The inset of the list and the title inside the panel, on both sides.
 LIST_LEFT = 20
@@ -183,7 +187,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         would stop being centred if it did. Instead the list is shifted so its
         centre stays on the panel's centre. No text escapes the panel: below
         the clamp the widest line is PADDING narrower than the panel, and at
-        the clamp anything wider than the item layout's 760 is clipped (and
+        the clamp anything wider than the item layout's 1200 is clipped (and
         scrolled) by the label, which sits inside the full-width panel.
 
         Written unconditionally, including at the full width, because the
