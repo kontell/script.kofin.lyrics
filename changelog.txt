@@ -1,3 +1,6 @@
+[B]0.1.2[/B]
+• Fixed the add-on's own lyrics window sizing to the longest line: the panel is now fitted to the width the lines really draw at, where before most songs sat at full width with empty margins and wide all-capitals lines could run past the panel and off the screen
+
 [B]0.1.1[/B]
 • Fixed the lyrics panel keeping the previous track's narrow width, which drew the next track's longer lines off the side of the screen where they were cut off
 • Added the add-on icon
