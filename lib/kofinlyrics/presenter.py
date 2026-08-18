@@ -226,6 +226,10 @@ class Presenter:
             else:
                 self._lines = []  # dismissed; leave it shut for this song
             return
+        # Fitting the panel to the measured lines happens out here rather
+        # than in the window's own onInit: measuring pumps callbacks, and a
+        # callback is no place to pump from. A no-op once it has landed.
+        self._window.refit()
         if not self._following or self._window.scrolled:
             return
         active = self._active(position)
