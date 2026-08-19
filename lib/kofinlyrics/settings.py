@@ -20,6 +20,7 @@ DEFAULTS = {
     "showAutomatically": True,
     "showUntimed": True,
     "offset": 0.0,
+    "windowHeight": 480,
     "debug": False,
 }
 
@@ -55,6 +56,20 @@ def offset() -> float:
         return float(_get("offset", "getSettingNumber"))
     except (TypeError, ValueError):
         return 0.0
+
+
+def window_height() -> int:
+    """The lyrics panel's height in 1080p skin pixels, anchored to the top.
+
+    Exact pixels rather than a coarse choice: with a skin scaling its UI for
+    a large screen, only a number lets the panel sit flush with whatever the
+    skin draws beneath it. Applied to this addon's own window and, where the
+    skin opts in, to the skin's overlay too.
+    """
+    try:
+        return int(_get("windowHeight", "getSettingInt"))
+    except (TypeError, ValueError):
+        return int(DEFAULTS["windowHeight"])
 
 
 def debug() -> bool:

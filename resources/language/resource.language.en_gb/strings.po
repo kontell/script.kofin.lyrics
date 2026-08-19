@@ -42,3 +42,11 @@ msgstr ""
 msgctxt "#30008"
 msgid "Write what this addon is doing to the Kodi log. Leave this off unless you are chasing a problem."
 msgstr ""
+
+msgctxt "#30009"
+msgid "Lyrics window height (pixels)"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Height of the lyrics window in pixels, anchored to the top of the screen. The default 480 stays clear of the now-playing info; 800 fills the side of the screen."
+msgstr ""

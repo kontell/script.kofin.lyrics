@@ -142,5 +142,9 @@
 		<control type="label" id="3938"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
 		<control type="label" id="3939"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
 		<control type="label" id="3940"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
+		<!-- Exists only to prove a dialog id names this window: fetching it
+		     through a wrapper on any other dialog raises. Never read for
+		     geometry, so the one-read-per-id cache does not apply. -->
+		<control type="label" id="3999"><left>0</left><top>0</top><width>10</width><height>10</height><font>font14</font><visible>false</visible><label>-</label></control>
 	</controls>
 </window>

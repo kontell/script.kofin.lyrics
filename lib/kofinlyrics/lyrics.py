@@ -23,6 +23,13 @@ PROP_PATH = "kofin.lyric.path"
 # control to drive. Its presence is what makes this addon keep its own window
 # shut -- see service.py.
 PROP_CONTROL = "kofin.lyric.control"
+# Written by a skin alongside PROP_CONTROL, naming its overlay's backdrop
+# controls -- space-separated ids, since a skin drawing width variants has
+# one per variant. Publishing it opts the skin into geometry driving: skin
+# XML cannot read sizes from a property, so the user's window-height setting
+# is written onto these controls from the service instead. Absent, nothing
+# is touched.
+PROP_PANEL = "kofin.lyric.panel"
 # Written by us, read by the skin: raised while our own window has taken over
 # for manual scrolling, so the skin's passive overlay stands aside rather than
 # drawing the same lyrics twice.
@@ -37,6 +44,11 @@ PROP_INTERACTIVE = "kofin.lyric.interactive"
 # anything else silently ignores them. Only skin.contuary is known to honour
 # it; the settings say so, because there is no way to make a skin comply.
 PROP_SHOW = "kofin.lyric.show"
+# Written by us, read by the skin: how wide the playing song's lines run --
+# "narrow", "medium" or "wide". A coarse class rather than pixels because
+# skin geometry cannot bind a property (an $INFO width renders zero-wide),
+# so a skin switches between authored variants on it instead.
+PROP_SIZE = "kofin.lyric.size"
 
 
 def _window() -> xbmcgui.Window:
@@ -59,6 +71,24 @@ def skin_control_id() -> int:
         return int(_window().getProperty(PROP_CONTROL))
     except (TypeError, ValueError):
         return 0
+
+
+def skin_panel_ids() -> List[int]:
+    """The overlay backdrops a skin has opted into resizing; empty if none."""
+    ids: List[int] = []
+    for token in _window().getProperty(PROP_PANEL).split():
+        try:
+            ids.append(int(token))
+        except ValueError:
+            return []  # a malformed contract is no contract
+    return ids
+
+
+def set_size(bucket: Optional[str]) -> None:
+    if bucket:
+        _window().setProperty(PROP_SIZE, bucket)
+    else:
+        _window().clearProperty(PROP_SIZE)
 
 
 def set_interactive(active: bool) -> None:

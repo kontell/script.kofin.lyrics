@@ -2,7 +2,7 @@
 <!-- The lyrics extension point comes first deliberately: an addon's LibPath is
      taken from its first <extension>, and that is what RunScript resolves when
      a skin's lyrics button fires. -->
-<addon id="script.kofin.lyrics" name="Kofin Lyrics" version="0.1.2" provider-name="kontell">
+<addon id="script.kofin.lyrics" name="Kofin Lyrics" version="0.2.0" provider-name="kontell">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
