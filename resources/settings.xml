@@ -25,7 +25,7 @@
         </setting>
         <setting id="windowHeight" type="integer" label="30009" help="30010">
           <level>0</level>
-          <default>800</default>
+          <default>480</default>
           <constraints>
             <minimum>260</minimum>
             <maximum>800</maximum>

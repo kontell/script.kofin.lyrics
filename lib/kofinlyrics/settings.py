@@ -20,7 +20,7 @@ DEFAULTS = {
     "showAutomatically": True,
     "showUntimed": True,
     "offset": 0.0,
-    "windowHeight": 800,
+    "windowHeight": 480,
     "debug": False,
 }
 

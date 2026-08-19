@@ -48,5 +48,5 @@ msgid "Lyrics window height (pixels)"
 msgstr ""
 
 msgctxt "#30010"
-msgid "How tall the lyrics window is, in 1080p skin pixels, anchored to the top of the screen. Lower it to keep the lyrics clear of whatever the skin shows across the bottom, such as the now-playing info. 800 is the full height; the panel shows as many whole lines as fit.[CR][CR]Where the skin draws the lyrics itself and supports resizing, the same height is applied to its overlay. Confirmed with Contuary."
+msgid "Height of the lyrics window in pixels, anchored to the top of the screen. The default 480 stays clear of the now-playing info; 800 fills the side of the screen."
 msgstr ""
