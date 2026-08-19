@@ -1,3 +1,9 @@
+v0.2.0
+• The add-on's own lyrics window now changes size in one smooth glide per song, instead of jumping to a guess and snapping to the real width moments later
+• Fixed a crash: Kodi can close the lyrics window by itself, and the add-on writing to the closed window could take the whole of Kodi down on the next track change. It now notices and quietly reopens
+• New setting for the lyrics window height, in pixels, anchored to the top of the screen — set it to keep the lyrics clear of whatever the skin draws along the bottom
+• Skins that draw the lyrics themselves can now size their overlay per song: the add-on publishes how wide the song's lines run, and applies the height setting to the skin's overlay where the skin supports it. Contuary 2.7 does both
+
 v0.1.2
 • Fixed the add-on's own lyrics window sizing to the longest line: the panel now measures how wide the lines really draw and fits itself to the widest one, growing up to half again wider than before so long lines show whole instead of being cut short or sliding, and shrinking around short-lined songs instead of sitting at full width with empty margins
 
