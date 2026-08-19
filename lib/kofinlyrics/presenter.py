@@ -39,10 +39,15 @@ WINDOW_VISUALISATION = 12006
 
 # The skin overlay's vertical framing, part of the driving contract a skin
 # opts into by publishing kofin.lyric.panel: 60px rows with 20px of combined
-# inset above and below the list. The height itself is the user's setting,
-# shared with this addon's own window.
+# inset above and below the list, authored at the full height. The height
+# itself is the user's setting, shared with this addon's own window.
 SKIN_ROW_HEIGHT = 60
 SKIN_VERTICAL_INSET = 20
+# The page the skin's list was authored with. A list resized at runtime
+# keeps scrolling by its authored page (verified live -- see
+# LyricsWindow.lead_rows), so the overlay's lead works in these rows however
+# short the visible list is.
+SKIN_PAGE_ROWS = (FULL_HEIGHT - SKIN_VERTICAL_INSET) // SKIN_ROW_HEIGHT
 
 # Where the size buckets split, as fractions of the addon window's full
 # width. Published for skins that draw their own overlay: skin geometry
@@ -76,6 +81,21 @@ def _skin_list_position(control: int) -> int:
         return int(xbmc.getInfoLabel("Container(%d).CurrentItem" % control)) - 1
     except (TypeError, ValueError):
         return -1
+
+
+def _skin_list_length(control: int) -> int:
+    """How many rows the skin's list really holds, or 0 if unreadable.
+
+    Read from the container rather than counted from the published lines:
+    kofin pads its lyrics directory with a blank tail so the last sung lines
+    can be dragged up to the visible middle, and the pad is part of what the
+    drag has to work against. An unpadded, older kofin just reads shorter,
+    and the drag clamps to what exists.
+    """
+    try:
+        return int(xbmc.getInfoLabel("Container(%d).NumItems" % control))
+    except (TypeError, ValueError):
+        return 0
 
 
 def _size_bucket(lines: List[source.LyricLine]) -> str:
@@ -242,7 +262,7 @@ class Presenter:
         if active == self._sent and where == active:
             return
         self._sent = active
-        rows = _skin_rows(settings.window_height())
+        visible = _skin_rows(settings.window_height())
         self._position_list(
             lambda index: xbmc.executebuiltin(
                 # absolute: without it the position is taken relative to the
@@ -252,7 +272,8 @@ class Presenter:
                 % (control, index)
             ),
             active,
-            max(1, (rows - 1) // 2),
+            max(1, (SKIN_PAGE_ROWS - 1) - (visible - 1) // 2),
+            (_skin_list_length(control) or len(self._lines)) - 1,
         )
 
     def _apply_skin_geometry(self, control: int) -> bool:
@@ -319,7 +340,10 @@ class Presenter:
             return
         self._sent = active
         window = self._window
-        self._position_list(window.highlight, active, window.lead_rows())
+        lead = window.lead_rows()
+        # The window's list carries lead_rows() of blank tail, so the drag
+        # target exists right up to the last line.
+        self._position_list(window.highlight, active, lead, len(self._lines) - 1 + lead)
 
     def _open_window(self) -> None:
         try:
@@ -351,22 +375,26 @@ class Presenter:
     # -- shared -------------------------------------------------------------
 
     @staticmethod
-    def _position_list(select: Callable[[int], None], active: int, lead: int) -> None:
-        """Put ``active`` on the list, sitting mid-panel once it gets there.
+    def _position_list(
+        select: Callable[[int], None], active: int, lead: int, last: int
+    ) -> None:
+        """Put ``active`` on the list, sitting mid-view once it gets there.
 
-        A list only scrolls when the cursor reaches the edge of the view, so
+        A list only scrolls when the cursor reaches the edge of its page, so
         selecting the sung line alone walks the cursor from the top down to
-        the *bottom* row and scrolls from there -- the line ends up at the
-        foot of the panel rather than the middle.
+        the page's *bottom* row and scrolls from there -- and the page is the
+        one the list was authored with, however short it has been resized,
+        so the bottom row may not even be on screen.
 
-        Selecting a line ``lead`` further on first drags the view down so that
-        line sits at the bottom, which leaves the sung line ``lead`` rows above
-        it; putting the cursor back on it then moves no view, because it is
-        already showing. Early in a track neither selection scrolls anything,
-        so the cursor simply walks down from the top, which is what we want
-        there.
+        Selecting a line ``lead`` further on first drags the view down so
+        that line sits at the page bottom, which leaves the sung line
+        ``lead`` rows above it -- the middle of the rows actually visible,
+        by the lead the caller chose; putting the cursor back on it then
+        moves no view, because it is already showing. Early in a track
+        neither selection scrolls anything, so the cursor simply walks down
+        from the top. ``last`` caps the drag at the list's real end.
         """
-        select(active + lead)
+        select(min(active + lead, last))
         select(active)
 
     def _active(self, position: Optional[float]) -> Optional[int]:

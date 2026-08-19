@@ -21,6 +21,7 @@ use-after-free that no except can catch (SIGSEGV in Control::setWidth,
 """
 
 import math
+import time
 from typing import Any, List, Optional, cast
 
 import xbmc
@@ -81,10 +82,14 @@ PROBE_ATTEMPTS = 3
 # service thread because it is the only smooth mechanism there is -- skin
 # animations cannot be triggered from Python (setVisible ignores
 # VisibleChange and setAnimations alike, verified on 21.3), and skin
-# geometry cannot bind a property. Differences below the snap threshold are
-# applied directly: a glide nobody can see is just latency.
-TWEEN_STEPS = 12
-TWEEN_STEP_MS = 25
+# geometry cannot bind a property. Positions come from the clock, not a
+# step counter: xbmc.sleep pumps pending callbacks, so a step can overrun
+# during exactly the busy moments a track change brings, and a counted
+# tween fell behind the curve and read as jerky. Differences below the
+# snap threshold are applied directly: a glide nobody can see is just
+# latency.
+TWEEN_MS = 300
+TWEEN_STEP_MS = 16
 TWEEN_SNAP_PX = 12
 
 # The width put up before the measurement lands, and the fallback if it never
@@ -136,6 +141,15 @@ def rows_for(height: int) -> int:
     return max(3, (height - TITLE_STRIP - BOTTOM_PAD) // ROW_HEIGHT)
 
 
+# A list resized at runtime keeps the page it was authored with: scrolling
+# still treats the view as this many rows, so a selected line rides at the
+# bottom of the *authored* page however short the visible list is. Verified
+# live -- at 11 visible rows of a 13-row page the sung line sat two rows
+# below centre, and shorter than that it left the window entirely. Lead
+# arithmetic therefore works in page rows, not visible rows.
+PAGE_ROWS = rows_for(FULL_HEIGHT)
+
+
 class LyricsWindow(xbmcgui.WindowXMLDialog):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Taken here rather than through a setter after show(): onInit runs on
@@ -171,10 +185,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         except Exception:  # pragma: no cover - window torn down mid-init
             self._list = None
             return
-        for line in self._lines:
-            # A blank line still occupies a row: lines are addressed by index,
-            # so dropping empties would shift every line after one.
-            self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
+        self._fill()
         # The estimate only, applied instantly so it is the width the open
         # fade plays at: measuring waits on the renderer, and waiting is
         # exactly what a callback must not do. The service loop's next
@@ -205,9 +216,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             width = width_for(measured)
         if not self._alive():  # measurement took ~a second; re-check
             return
-        self._list.reset()
-        for line in self._lines:
-            self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
+        self._fill()
         self._tween_to(width)
 
     def set_target_height(self, height: int) -> None:
@@ -236,8 +245,33 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         self._tween_to(width_for(measured))
 
     def lead_rows(self) -> int:
-        """How far below the sung line to drag the view; see the presenter."""
-        return max(1, (rows_for(self._target_height) - 1) // 2)
+        """How far below the sung line to drag the view; see the presenter.
+
+        Selecting ``lead`` ahead leaves the sung line that far above the
+        *authored* page's bottom row -- the page a runtime-resized list
+        still scrolls by -- which lands it mid-way down the rows actually
+        visible at the current height.
+        """
+        visible = rows_for(self._target_height)
+        return max(1, (PAGE_ROWS - 1) - (visible - 1) // 2)
+
+    def _fill(self) -> None:
+        """Put the current lines on the list, plus a blank tail.
+
+        A blank line still occupies a row: lines are addressed by index, so
+        dropping empties would shift every line after one. The lead_rows()
+        blanks after the last line let the final sung lines be dragged up to
+        the visible middle -- the view scrolls no further than its last row,
+        so without them the song's tail could only sit at the bottom of the
+        page, which a shortened window clips off entirely.
+        """
+        if self._list is None:
+            return
+        self._list.reset()
+        for line in self._lines:
+            self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
+        for _ in range(self.lead_rows()):
+            self._list.addItem(xbmcgui.ListItem(" ", offscreen=True))
 
     # -- liveness ------------------------------------------------------------
 
@@ -288,20 +322,27 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         Stepped writes from this thread render as real motion (verified at
         full frame rate on 21.3); there is no GUI-side alternative, because
         Python cannot trigger skin animations and skin geometry cannot bind
-        a property. Each step re-checks _alive() so a window closed mid-glide
-        is abandoned, not written to.
+        a property. The position for each write comes from the elapsed
+        clock, so a sleep stretched by the callback pump lands the next
+        write further along the curve instead of behind it -- late, not
+        wrong. Each step re-checks _alive() so a window closed mid-glide is
+        abandoned, not written to.
         """
         if self._width == 0 or abs(width - self._width) <= TWEEN_SNAP_PX:
             self._fit(width)
             return
         start = self._width
-        for step in range(1, TWEEN_STEPS + 1):
+        began = time.monotonic()
+        while True:
             if not self._alive():
                 return
-            eased = (1 - math.cos(math.pi * step / TWEEN_STEPS)) / 2
+            part = (time.monotonic() - began) * 1000 / TWEEN_MS
+            if part >= 1:
+                break
+            eased = (1 - math.cos(math.pi * part)) / 2
             self._fit(round(start + (width - start) * eased))
-            if step < TWEEN_STEPS:
-                xbmc.sleep(TWEEN_STEP_MS)
+            xbmc.sleep(TWEEN_STEP_MS)
+        self._fit(width)
 
     def _fit(self, width: int) -> None:
         """Put the panel at ``width`` and the target height, right-anchored.
