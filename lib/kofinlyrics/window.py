@@ -11,8 +11,16 @@ must stay trivial: onInit doing the measurement below re-entered the GUI from
 a window still being activated and crashed Kodi outright (SIGSEGV, 21.3).
 Measuring therefore happens in refit(), called from the service loop once
 the window is up, never from a callback.
+
+One more rule with a crash behind it: every control write checks _alive()
+first. Kodi can close this dialog from its own side -- observed in the wild,
+closer unidentified -- and a closed WindowXML frees the control tree while
+the Python wrappers keep their pointers. A write through one is a
+use-after-free that no except can catch (SIGSEGV in Control::setWidth,
+21.3).
 """
 
+import math
 from typing import Any, List, Optional, cast
 
 import xbmc
@@ -30,6 +38,10 @@ TITLE_ID = 102
 # twice, same site, both threads -- so ids are spent instead.)
 MEASURE_ID_FIRST = 3901
 MEASURE_ID_LAST = 3940
+# A hidden label that exists only to prove a dialog id is ours: fetching it
+# through a wrapper on some other dialog raises. Never read for geometry, so
+# the one-read-per-id cache does not matter here.
+SENTINEL_ID = 3999
 XML_FILENAME = "script-kofin-lyrics.xml"
 
 HOME_WINDOW = 10000
@@ -45,16 +57,35 @@ PROP_MEASURE = "kofin.lyric.measure"
 # truncated. The right edge stays anchored; only the left edge moves.
 FULL_WIDTH = 1240
 MIN_WIDTH = 300
+# The panel as authored vertically, and how short the height setting may
+# take it. Top-anchored: the height grows and shrinks at the bottom edge.
+FULL_HEIGHT = 800
+MIN_HEIGHT = 260
 # The inset of the list and the title inside the panel, on both sides.
 LIST_LEFT = 20
 # Air between the widest line and the panel edges, shared between both sides.
 PADDING = 80
+# Vertical framing: the title strip above the list, breathing room below,
+# and the row height every layout in the XML uses.
+TITLE_STRIP = 60
+BOTTOM_PAD = 20
+ROW_HEIGHT = 60
 
 # How long the renderer gets to show a measure line before it is read. Not a
 # poll: reading is what spends the label, so there is exactly one read.
 SETTLE_MS = 400
 # Measurement rounds that come back empty before a track keeps the estimate.
 PROBE_ATTEMPTS = 3
+
+# The resize glide: how the panel moves between songs. Stepped from the
+# service thread because it is the only smooth mechanism there is -- skin
+# animations cannot be triggered from Python (setVisible ignores
+# VisibleChange and setAnimations alike, verified on 21.3), and skin
+# geometry cannot bind a property. Differences below the snap threshold are
+# applied directly: a glide nobody can see is just latency.
+TWEEN_STEPS = 12
+TWEEN_STEP_MS = 25
+TWEEN_SNAP_PX = 12
 
 # The width put up before the measurement lands, and the fallback if it never
 # does: per-glyph-class advances for the stock NotoSans at font14's 33px,
@@ -79,7 +110,7 @@ CLOSE_ACTIONS = (ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU, ACTION_NAV_BACK)
 SCROLL_ACTIONS = (3, 4, 5, 6, 104, 105, 111, 112)
 
 
-def _estimate(line: str) -> int:
+def estimate_px(line: str) -> int:
     """Rendered-width estimate in pixels, for ranking and for fallback."""
     total = 0
     for ch in line:
@@ -95,16 +126,35 @@ def _estimate(line: str) -> int:
     return total
 
 
+def width_for(longest_px: int) -> int:
+    """Panel width for a widest line, clamped to the authored bounds."""
+    return min(FULL_WIDTH, max(MIN_WIDTH, longest_px + PADDING))
+
+
+def rows_for(height: int) -> int:
+    """Whole rows that fit a panel of ``height`` alongside the title strip."""
+    return max(3, (height - TITLE_STRIP - BOTTOM_PAD) // ROW_HEIGHT)
+
+
 class LyricsWindow(xbmcgui.WindowXMLDialog):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Taken here rather than through a setter after show(): onInit runs on
         # Kodi's thread some time after show() returns, so anything written to
         # the controls before then lands on a window that does not exist yet.
         self._lines: List[str] = list(kwargs.pop("lines", []))
+        self._target_height: int = self._clamp_height(
+            int(kwargs.pop("height", FULL_HEIGHT))
+        )
         super().__init__(*args)
         self.closed = False
+        # Distinguishes the viewer closing the window (stay shut for the
+        # song) from Kodi closing it out from under us (reopen).
+        self.dismissed = False
         self.scrolled = False
         self._list: Optional[xbmcgui.ControlList] = None
+        self._window_id: Optional[int] = None
+        self._width = 0
+        self._height = 0
         self._next_probe = MEASURE_ID_FIRST
         self._measured = False
         self._probe_attempts = 0
@@ -125,41 +175,47 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             # A blank line still occupies a row: lines are addressed by index,
             # so dropping empties would shift every line after one.
             self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
-        # The estimate only: measuring waits on the renderer, and waiting is
+        # The estimate only, applied instantly so it is the width the open
+        # fade plays at: measuring waits on the renderer, and waiting is
         # exactly what a callback must not do. The service loop's next
-        # refit() replaces it.
-        self.fit_to(self._lines)
+        # refit() glides the few pixels to the measured truth.
+        self._fit(self._estimate_width(self._lines))
 
     def set_lines(self, lines: List[str]) -> None:
-        """Replace the lines in an already-open window, for the next track."""
+        """Replace the lines in an already-open window, for the next track.
+
+        Measured before anything visible moves: the probe labels are
+        window-level and know nothing of the list, so the outgoing track
+        keeps its panel while the new one is sized. The swap and the resize
+        then land together -- one visible change, glided -- where fitting
+        the estimate first moved the panel twice per track.
+        """
         self._lines = list(lines)
-        if self._list is None:
+        if self._list is None or not self._alive():
+            return
+        self.scrolled = False
+        self._measured = False
+        self._probe_attempts = 0
+        measured = self._measure_longest(self._lines)
+        if measured is None:
+            self._probe_attempts = 1
+            width = self._estimate_width(self._lines)
+        else:
+            self._measured = True
+            width = width_for(measured)
+        if not self._alive():  # measurement took ~a second; re-check
             return
         self._list.reset()
         for line in self._lines:
             self._list.addItem(xbmcgui.ListItem(line or " ", offscreen=True))
-        self.scrolled = False
-        self._measured = False
-        self._probe_attempts = 0
-        self.fit_to(self._lines)
-        # Called from the service thread, so the measurement can happen right
-        # here rather than waiting a tick.
-        self.refit()
+        self._tween_to(width)
 
-    def fit_to(self, lines: List[str]) -> None:
-        """Fit the panel to the estimated widest line, immediately.
-
-        Safe from onInit -- pure arithmetic and control writes, nothing that
-        waits. The estimate errs by glyph mix, so this is only the width
-        shown until refit() measures the truth.
-        """
-        if self._list is None:
-            return
-        widest = max((_estimate(line) for line in lines if line.strip()), default=0)
-        self._apply_width(widest)
+    def set_target_height(self, height: int) -> None:
+        """The user's panel height; applied with the next fit."""
+        self._target_height = self._clamp_height(height)
 
     def refit(self) -> None:
-        """Measure the widest line on the live skin font and fit to it.
+        """Measure the widest line on the live skin font and glide to it.
 
         The service loop calls this every tick; it is a no-op once measured.
         The measure labels in script-kofin-lyrics.xml have <width>auto</width>,
@@ -168,7 +224,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         any estimate from character counts is wrong per skin, per font and
         per glyph.
         """
-        if self._list is None or self.closed or self._measured:
+        if self._list is None or self._measured or not self._alive():
             return
         self._probe_attempts += 1
         measured = self._measure_longest(self._lines)
@@ -177,10 +233,78 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
                 self._measured = True  # the estimate stands for this track
             return
         self._measured = True
-        self._apply_width(measured)
+        self._tween_to(width_for(measured))
 
-    def _apply_width(self, longest_px: int) -> None:
-        """Size the panel to a widest-line width, never past the authored one.
+    def lead_rows(self) -> int:
+        """How far below the sung line to drag the view; see the presenter."""
+        return max(1, (rows_for(self._target_height) - 1) // 2)
+
+    # -- liveness ------------------------------------------------------------
+
+    def _alive(self) -> bool:
+        """Whether the dialog Kodi holds for us still exists.
+
+        Kodi can close this dialog without close() ever running -- observed
+        live, closer unidentified -- and a closed WindowXML frees its control
+        tree while our wrappers keep their pointers. The next write through
+        one segfaulted Kodi (Control::setWidth, 21.3), so nothing here
+        touches a control before asking.
+
+        The id is taken from getCurrentWindowDialogId once, validated by
+        fetching the sentinel label through it -- a foreign dialog raises.
+        While something else is on top the id cannot be learned; the window
+        was shown moments ago, so that counts as alive and discovery retries
+        on the next call. Once known, Window.IsVisible answers from Kodi's
+        side, repeatably, with no wrapper involved.
+        """
+        if self.closed:
+            return False
+        if self._window_id is None:
+            dialog_id = xbmcgui.getCurrentWindowDialogId()
+            try:
+                xbmcgui.Window(dialog_id).getControl(SENTINEL_ID)
+            except Exception:
+                return True
+            self._window_id = dialog_id
+            return True
+        if xbmc.getCondVisibility("Window.IsVisible(%d)" % self._window_id):
+            return True
+        self.closed = True
+        return False
+
+    # -- fitting -------------------------------------------------------------
+
+    def _estimate_width(self, lines: List[str]) -> int:
+        widest = max((estimate_px(line) for line in lines if line.strip()), default=0)
+        return width_for(widest)
+
+    @staticmethod
+    def _clamp_height(height: int) -> int:
+        return min(FULL_HEIGHT, max(MIN_HEIGHT, height))
+
+    def _tween_to(self, width: int) -> None:
+        """Glide the panel's left edge to ``width`` over ~300ms.
+
+        Stepped writes from this thread render as real motion (verified at
+        full frame rate on 21.3); there is no GUI-side alternative, because
+        Python cannot trigger skin animations and skin geometry cannot bind
+        a property. Each step re-checks _alive() so a window closed mid-glide
+        is abandoned, not written to.
+        """
+        if self._width == 0 or abs(width - self._width) <= TWEEN_SNAP_PX:
+            self._fit(width)
+            return
+        start = self._width
+        for step in range(1, TWEEN_STEPS + 1):
+            if not self._alive():
+                return
+            eased = (1 - math.cos(math.pi * step / TWEEN_STEPS)) / 2
+            self._fit(round(start + (width - start) * eased))
+            if step < TWEEN_STEPS:
+                xbmc.sleep(TWEEN_STEP_MS)
+
+    def _fit(self, width: int) -> None:
+        """Put the panel at ``width`` and the target height, right-anchored.
 
         Only the panel and the two controls move: the list keeps its authored
         width because an <itemlayout> cannot be resized at runtime, so the text
@@ -191,15 +315,15 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         scrolled) by the label, which sits inside the full-width panel.
 
         Written unconditionally, including at the full width, because the
-        window is refilled across track changes rather than reopened. Returning
-        early once the lines no longer need shrinking left the *previous*
-        track's narrow panel in place: the list is re-centred on the panel, so
-        the next track's longer lines drew centred on a panel 500 too far left
-        and ran off the right of the screen, clipped and unbacked. At the full
-        width the arithmetic below reproduces the authored geometry exactly.
+        window is refilled across track changes rather than reopened. At the
+        full size the arithmetic reproduces the authored geometry exactly.
+        The height is top-anchored -- the panel's bottom edge is what moves --
+        and the list shows whole rows only, so the panel keeps the exact
+        pixel height the setting asks for while the rows snap underneath.
         """
-        width = min(FULL_WIDTH, max(MIN_WIDTH, longest_px + PADDING))
+        height = self._target_height
         left = FULL_WIDTH - width  # right edge stays where it was authored
+        self._width = width
         try:
             panel = self.getControl(PANEL_ID)
             panel.setWidth(width)
@@ -207,10 +331,15 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             title = self.getControl(TITLE_ID)
             title.setWidth(width - 2 * LIST_LEFT)
             title.setPosition(left + LIST_LEFT, 10)
-            # Half the shrink: the list's text centres on its own authored
-            # width, so moving it half way keeps that centre on the panel's.
             if self._list is not None:
-                self._list.setPosition(LIST_LEFT + left // 2, 60)
+                # Half the shrink: the list's text centres on its own authored
+                # width, so moving it half way keeps that centre on the panel's.
+                self._list.setPosition(LIST_LEFT + left // 2, TITLE_STRIP)
+            if height != self._height:
+                panel.setHeight(height)
+                if self._list is not None:
+                    self._list.setHeight(rows_for(height) * ROW_HEIGHT)
+                self._height = height
         except Exception:  # pragma: no cover - window torn down under us
             pass
 
@@ -233,7 +362,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
                     # Clamped regardless; a wider runner-up changes nothing.
                     break
         except Exception:
-            # Torn down under us mid-probe; the estimate is already up.
+            # Torn down under us mid-probe; the caller falls back.
             return None
         finally:
             try:
@@ -253,12 +382,12 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         error, and three probes is plenty.
         """
         unique = sorted(
-            {line for line in lines if line.strip()}, key=_estimate, reverse=True
+            {line for line in lines if line.strip()}, key=estimate_px, reverse=True
         )
         if not unique:
             return []
-        floor = _estimate(unique[0]) * 85 // 100
-        return [line for line in unique[:3] if _estimate(line) >= floor]
+        floor = estimate_px(unique[0]) * 85 // 100
+        return [line for line in unique[:3] if estimate_px(line) >= floor]
 
     def _probe(self, home: xbmcgui.Window, line: str) -> Optional[int]:
         """One measurement through the next virgin label, or None.
@@ -284,7 +413,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
     # -- driving ------------------------------------------------------------
 
     def highlight(self, index: int) -> None:
-        if self._list is None or self.scrolled:
+        if self._list is None or self.scrolled or not self._alive():
             return
         try:
             self._list.selectItem(index)
@@ -301,6 +430,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
     def onAction(self, action: xbmcgui.Action) -> None:
         action_id = action.getId()
         if action_id in CLOSE_ACTIONS:
+            self.dismissed = True
             self.close()
         elif action_id in SCROLL_ACTIONS:
             self.scrolled = True

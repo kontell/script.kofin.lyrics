@@ -23,6 +23,15 @@
           </constraints>
           <control type="slider" format="number"/>
         </setting>
+        <setting id="windowHeight" type="integer" label="30009" help="30010">
+          <level>0</level>
+          <default>800</default>
+          <constraints>
+            <minimum>260</minimum>
+            <maximum>800</maximum>
+          </constraints>
+          <control type="edit" format="integer"/>
+        </setting>
       </group>
       <group id="2">
         <setting id="debug" type="boolean" label="30007" help="30008">
