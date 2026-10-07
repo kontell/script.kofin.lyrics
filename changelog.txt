@@ -1,3 +1,6 @@
+v0.3.0
+- Publish four lyric window widths instead of three
+
 v0.2.0
 • The add-on's own lyrics window now changes size in one smooth glide per song, instead of jumping to a guess and snapping to the real width moments later
 • Fixed a crash: Kodi can close the lyrics window by itself, and the add-on writing to the closed window could take the whole of Kodi down on the next track change. It now notices and quietly reopens
