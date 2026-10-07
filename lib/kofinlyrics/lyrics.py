@@ -45,9 +45,10 @@ PROP_INTERACTIVE = "kofin.lyric.interactive"
 # it; the settings say so, because there is no way to make a skin comply.
 PROP_SHOW = "kofin.lyric.show"
 # Written by us, read by the skin: how wide the playing song's lines run --
-# "narrow", "medium" or "wide". A coarse class rather than pixels because
-# skin geometry cannot bind a property (an $INFO width renders zero-wide),
-# so a skin switches between authored variants on it instead.
+# "narrow", "mid", "medium" or "wide". A coarse class rather than pixels
+# because skin geometry cannot bind a property (an $INFO width renders
+# zero-wide), so a skin switches between authored variants on it instead.
+# mid is the narrower of the two middle sizes.
 PROP_SIZE = "kofin.lyric.size"
 
 
