@@ -24,7 +24,6 @@ from kofinlyrics import lyrics as source
 from kofinlyrics import settings
 from kofinlyrics.window import (
     FULL_HEIGHT,
-    FULL_WIDTH,
     XML_FILENAME,
     LyricsWindow,
     estimate_px,
@@ -49,13 +48,12 @@ SKIN_VERTICAL_INSET = 20
 # short the visible list is.
 SKIN_PAGE_ROWS = (FULL_HEIGHT - SKIN_VERTICAL_INSET) // SKIN_ROW_HEIGHT
 
-# Where the size buckets split, as fractions of the addon window's full
-# width. Published for skins that draw their own overlay: skin geometry
-# cannot bind a property (verified -- an $INFO width renders zero-wide), so
-# a skin gets a coarse class to switch authored variants on rather than a
-# pixel value it could not use.
-NARROW_BELOW = FULL_WIDTH * 45 // 100
-WIDE_ABOVE = FULL_WIDTH * 75 // 100
+# The overlay widths skin.contuary authors, narrowest first (Includes_Lyrics.xml).
+# A skin cannot bind a width, so the token is the smallest of those panels the
+# line fits in. Anything wider than the medium panel is "wide".
+PANEL_NARROW = 520
+PANEL_MID = 760
+PANEL_MEDIUM = 1000
 
 
 def log(message: str) -> None:
@@ -102,11 +100,13 @@ def _size_bucket(lines: List[source.LyricLine]) -> str:
     """The coarse width class of a song, for skins to switch variants on."""
     widest = max((estimate_px(text) for _, text in lines if text.strip()), default=0)
     width = width_for(widest)
-    if width <= NARROW_BELOW:
+    if width <= PANEL_NARROW:
         return "narrow"
-    if width >= WIDE_ABOVE:
-        return "wide"
-    return "medium"
+    if width <= PANEL_MID:
+        return "mid"
+    if width <= PANEL_MEDIUM:
+        return "medium"
+    return "wide"
 
 
 def _skin_rows(height: int) -> int:
