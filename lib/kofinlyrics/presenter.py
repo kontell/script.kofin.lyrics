@@ -81,6 +81,15 @@ def _skin_list_position(control: int) -> int:
         return -1
 
 
+def _skin_select(control: int, index: int) -> None:
+    """Move a skin's list to ``index``, by the only route a skin list has.
+
+    absolute: without it the position is taken relative to the visible page,
+    which lands on a different line every time the list scrolls.
+    """
+    xbmc.executebuiltin("Control.SetFocus(%d,%d,absolute)" % (control, index))
+
+
 def _skin_list_length(control: int) -> int:
     """How many rows the skin's list really holds, or 0 if unreadable.
 
@@ -158,6 +167,10 @@ class Presenter:
         if self._window is not None and not self._window.closed:
             self._window.set_target_height(settings.window_height())
             self._window.set_lines([text for _, text in lines])
+        if not timed:
+            # Back to the first line now, before this song's rows arrive;
+            # the tick only has to keep it there.
+            self._rewind_skin_list()
         source.set_show(True)
         log("%d lines%s" % (len(lines), "" if timed else " (untimed)"))
 
@@ -165,6 +178,7 @@ class Presenter:
         source.set_show(False)
         source.set_size(None)
         self._leave_interactive()
+        self._rewind_skin_list()
         self._close_window()
         self._lines = []
         self._sent = None
@@ -271,6 +285,14 @@ class Presenter:
             self._skin_stale = False
             resized = applied
         if not self._following:
+            # Nothing to follow, but this is the same list the last song
+            # used, and Kodi carries its selection across the change of rows:
+            # an untimed song opened scrolled to wherever the previous one
+            # ended. Put it back on the first line, and keep it there. The
+            # first line lands on the top row whatever the page, so this need
+            # not wait for a resize to settle.
+            if where != 0:
+                _skin_select(control, 0)
             return
         if resized:
             # Positioned from the next tick, not this one. The list takes its
@@ -285,13 +307,7 @@ class Presenter:
             return
         self._sent = active
         self._position_list(
-            lambda index: xbmc.executebuiltin(
-                # absolute: without it the position is taken relative to the
-                # visible page, which lands on a different line every time the
-                # list scrolls.
-                "Control.SetFocus(%d,%d,absolute)"
-                % (control, index)
-            ),
+            lambda index: _skin_select(control, index),
             active,
             paging.middle_row(self._skin_visible),
             paging.lead_rows(self._skin_visible, SKIN_PAGE_ROWS),
@@ -338,6 +354,20 @@ class Presenter:
         if resized:
             log("skin overlay height set to %d" % height)
         return resized
+
+    def _rewind_skin_list(self) -> None:
+        """Put the skin's list back on its first line, if it is on screen.
+
+        The list outlives the song, and Kodi carries its selection across a
+        change of rows, so a song opened scrolled to wherever the last one
+        ended. Done at the song boundary, while the overlay is hidden between
+        songs, so the next song's rows arrive already at the top. Only while
+        the list is addressable: Control.SetFocus acts on the active window,
+        so with the OSD up it would land there instead.
+        """
+        control = 0 if self._interactive else source.skin_control_id()
+        if control and _skin_list_position(control) > 0:
+            _skin_select(control, 0)
 
     # -- driving our own window ---------------------------------------------
 
