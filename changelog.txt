@@ -1,30 +1,29 @@
 v0.3.1
-• Fixed the lyrics sticking to the top row and scrolling in jumps on Kodi 22: the line being sung sits in the middle again, and the lyrics move up one line at a time
-• Fixed lyrics without timings opening part-way into the song with a line picked out, left over from the previous song. They now open at the top
-• Seeking back no longer sends the line being sung to the top row
-• The add-on's own lyrics window now picks out the line being sung as soon as it opens, instead of at the next line
-• With a skin that keeps its lyrics overlay at its own height, the line being sung now sits in the middle of it too
-• Fixed Kodi freezing until it was restarted when the add-on was updated or disabled while its own lyrics window was open. Kodi now pauses for a few seconds instead
+• Fixed lyrics stuck on the top row and scrolling in jumps on Kodi 22
+• Fixed untimed lyrics opening mid-song
+• Fixed the sung line jumping to the top after seeking back
+• Fixed the lyrics window starting on the first line when opened mid-song
+• Fixed the sung line sitting high in skins that don't resize their overlay
+• Fixed Kodi freezing if the add-on was updated or disabled with its window open
 
 v0.3.0
-- Publish four lyric window widths instead of three
+• Four lyrics window widths instead of three
 
 v0.2.0
-• The add-on's own lyrics window now changes size in one smooth glide per song, instead of jumping to a guess and snapping to the real width moments later
-• Fixed a crash: Kodi can close the lyrics window by itself, and the add-on writing to the closed window could take the whole of Kodi down on the next track change. It now notices and quietly reopens
-• New setting for the lyrics window height, in pixels, anchored to the top of the screen — set it to keep the lyrics clear of whatever the skin draws along the bottom
-• Skins that draw the lyrics themselves can now size their overlay per song: the add-on publishes how wide the song's lines run, and applies the height setting to the skin's overlay where the skin supports it. Contuary 2.7 does both
+• Lyrics window resizes in one glide per song
+• Fixed a crash after Kodi closed the lyrics window itself
+• New setting: lyrics window height
+• Skin overlays sized per song and to the height setting (Contuary 2.7)
 
 v0.1.2
-• Fixed the add-on's own lyrics window sizing to the longest line: the panel now measures how wide the lines really draw and fits itself to the widest one, growing up to half again wider than before so long lines show whole instead of being cut short or sliding, and shrinking around short-lined songs instead of sitting at full width with empty margins
+• Lyrics window fits its widest line
 
 v0.1.1
-• Fixed the lyrics panel keeping the previous track's narrow width, which drew the next track's longer lines off the side of the screen where they were cut off
+• Fixed the lyrics window keeping the previous song's width
 • Added the add-on icon
 
 v0.1.0
-• First release. Shows the song lyrics stored on a Jellyfin server as a track plays, in time with the music where the server has timings
-• Lines come from the Kofin add-on, which fetches them as playback starts, so there is no second login and nothing is scraped from the internet
-• Skins that draw lyrics themselves are used in preference to this add-on's own window; Contuary 2.2.0 and later does
-• Press the lyrics button on the music OSD to take the lyrics over and scroll them by hand
-• Settings for automatic display, a timing offset, whether to show lyrics that carry no timings, and debug logging
+• First release: Jellyfin lyrics via Kofin, in time with the music where timed
+• Skins that draw lyrics themselves take precedence (Contuary 2.2.0+)
+• Lyrics button on the music OSD to scroll by hand
+• Settings for automatic display, timing offset, untimed lyrics and debug logging
