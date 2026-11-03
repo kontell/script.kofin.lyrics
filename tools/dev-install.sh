@@ -1,23 +1,19 @@
 #!/bin/bash
 # Install the working tree into the local Kodi and (re)load it.
 # Usage: tools/dev-install.sh
-# Keep the exclude list in step with tools/build.py.
+# Installs what tools/build.py packs, so a new file needs a `git add` first.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$HOME/.kodi/addons/script.kofin.lyrics"
 KODI_RPC="http://localhost:8080/jsonrpc"
 
-# --delete-excluded: plain --exclude keeps stale copies in the destination.
-rsync -a --delete --delete-excluded \
-    --exclude '.git' --exclude '.github' --exclude '.gitignore' \
-    --exclude '.git-blame-ignore-revs' \
-    --exclude '.venv' --exclude '.tox' \
-    --exclude '__pycache__' --exclude '.mypy_cache' --exclude '.pytest_cache' \
-    --exclude 'docs' --exclude 'tests' --exclude 'tools' --exclude 'dist' \
-    --exclude 'mypy.ini' --exclude 'tox.ini' --exclude 'pyproject.toml' \
-    --exclude 'requirements-dev.txt' \
-    "$SRC/" "$DEST/"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+python3 "$SRC/tools/build.py" "$WORK" > /dev/null
+rm -rf "$DEST"
+mkdir -p "$(dirname "$DEST")"
+unzip -q "$WORK"/script.kofin.lyrics-*.zip -d "$(dirname "$DEST")"
 
 if ! curl -s -m 2 -u kodi:kodi -o /dev/null "$KODI_RPC" \
         -X POST -H 'Content-Type: application/json' \
