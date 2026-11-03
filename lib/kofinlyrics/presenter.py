@@ -370,6 +370,11 @@ class Presenter:
         self._window.refit()
         if not self._following or self._window.scrolled:
             return
+        if not self._window.ready:
+            # Just opened. A line sent now would be dropped yet count as
+            # sent, and the window would sit on its first line until the
+            # next one is sung -- seconds, in an instrumental break.
+            return
         active = self._active(position)
         if active is None or active == self._sent:
             return

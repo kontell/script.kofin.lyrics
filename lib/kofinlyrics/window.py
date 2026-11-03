@@ -222,6 +222,15 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         """The user's panel height; applied with the next fit."""
         self._target_height = self._clamp_height(height)
 
+    @property
+    def ready(self) -> bool:
+        """Whether onInit has run, so the list exists to be driven.
+
+        show() returns before it does: onInit is delivered on a later pump of
+        this thread, so a selection made in between goes nowhere.
+        """
+        return self._list is not None
+
     def refit(self) -> None:
         """Measure the widest line on the live skin font and glide to it.
 
