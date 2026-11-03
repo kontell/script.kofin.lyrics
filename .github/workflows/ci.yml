@@ -55,6 +55,21 @@ jobs:
       - name: compileall
         run: python -m compileall -q default.py service.py lib/ tools/
 
+  translations:
+    name: translations
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: gen.py --check
+        run: python3 tools/i18n/gen.py --check
+      - name: validate.py
+        run: python3 tools/i18n/validate.py
+      - name: pocheck.py
+        run: python3 tools/i18n/pocheck.py
+
   package:
     name: package
     # Independent of the gates so a style failure still yields an install zip.

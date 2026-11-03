@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Testi dei brani dal tuo server Jellyfin",
+  "Addon Description": "Mostra i testi da un server Jellyfin, in una finestra disegnata da questo add-on oppure passandoli a una skin.",
+  "#30001": "Mostra i testi automaticamente",
+  "#30002": "Mostra il testo all'inizio di ogni brano, non solo quando premi il pulsante dei testi. Alcune skin lo ignorano.",
+  "#30003": "Mostra i testi non sincronizzati",
+  "#30004": "I testi non sincronizzati restano fermi invece di seguire il brano. Alcune skin lo ignorano.",
+  "#30005": "Scarto temporale (secondi)",
+  "#30006": "Aumentalo se le righe arrivano troppo presto, diminuiscilo se arrivano troppo tardi.",
+  "#30009": "Altezza della finestra dei testi (pixel)",
+  "#30010": "Dal bordo superiore dello schermo. 480 lascia libere le informazioni di riproduzione; 800 è l'altezza piena."
+}

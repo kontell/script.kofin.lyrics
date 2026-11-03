@@ -7,8 +7,15 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: en_GB\n"
 
-msgctxt "#30000"
-msgid "General"
+# Kodi shows the add-on's summary and description from addon.xml; these copies
+# are what gets translated. Keep them in step with its en_GB text.
+
+msgctxt "Addon Summary"
+msgid "Song lyrics from your Jellyfin server"
+msgstr ""
+
+msgctxt "Addon Description"
+msgid "Shows lyrics from a Jellyfin server, either in a window drawn by this add-on or handed to a skin."
 msgstr ""
 
 msgctxt "#30001"

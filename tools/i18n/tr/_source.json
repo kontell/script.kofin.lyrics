@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Song lyrics from your Jellyfin server",
+  "Addon Description": "Shows lyrics from a Jellyfin server, either in a window drawn by this add-on or handed to a skin.",
+  "#30001": "Show lyrics automatically",
+  "#30002": "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this.",
+  "#30003": "Show lyrics that have no timings",
+  "#30004": "Untimed lyrics stay still instead of following the song. Some skins ignore this.",
+  "#30005": "Timing offset (seconds)",
+  "#30006": "Raise it if lines come too early, lower it if they come too late.",
+  "#30009": "Lyrics window height (pixels)",
+  "#30010": "From the top of the screen. 480 clears the now-playing info; 800 is full height."
+}
