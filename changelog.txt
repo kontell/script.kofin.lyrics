@@ -4,6 +4,7 @@ v0.3.1
 • Fixed the sung line jumping to the top after seeking back
 • Fixed the lyrics window starting on the first line when opened mid-song
 • Fixed the first arrow press in the lyrics window not scrolling
+• Fixed scrolling by hand running past the end of the lyrics
 • Fixed the sung line sitting high in skins that don't resize their overlay
 • Fixed Kodi freezing if the add-on was updated or disabled with its window open
 • Removed the debug logging setting; use Kodi's debug logging instead

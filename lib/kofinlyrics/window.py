@@ -423,3 +423,17 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             self.close()
         elif action_id in SCROLL_ACTIONS:
             self.scrolled = True
+            self._stop_at_last_line()
+
+    def _stop_at_last_line(self) -> None:
+        """Bring a list scrolled by hand back from the blank rows after the
+        last line with text, which are there only for following (see _fill)."""
+        if self._list is None or not self._alive():
+            return
+        last = max((i for i, line in enumerate(self._lines) if line.strip()), default=0)
+        if self._list.getSelectedPosition() <= last:
+            return
+        # An item above the view lands on the top row (see
+        # Presenter._position_list), leaving the last line on the bottom row.
+        self._list.selectItem(max(0, last - (rows_for(self._target_height) - 1)))
+        self._list.selectItem(last)
