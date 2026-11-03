@@ -125,7 +125,10 @@ def _skin_rows(height: int) -> int:
 class Presenter:
     """Owns whichever surface is showing the current song's lyrics."""
 
-    def __init__(self) -> None:
+    def __init__(self, monitor: xbmc.Monitor) -> None:
+        # The service's own monitor: abortRequested() is per instance, and
+        # only one that existed when Kodi asked is told.
+        self._monitor = monitor
         self._lines: List[source.LyricLine] = []
         self._window: Optional[LyricsWindow] = None
         self._sent: Optional[int] = None
@@ -213,7 +216,20 @@ class Presenter:
             self._lines = source.published_lines()
 
     def close(self) -> None:
+        """Let everything go as the service ends.
+
+        The window goes by close_at_shutdown, never close(): Kodi stops a
+        service while its main thread waits for the script, and a close that
+        waits for the main thread then freezes Kodi for good. The window is
+        held here until that returns -- freeing it while the dialog is up
+        runs the same close. Everything else is let go first, so the
+        properties a skin reads are cleared even if Kodi kills this script
+        in the middle of the wait.
+        """
+        window, self._window = self._window, None
         self.stop_song()
+        if window is not None:
+            window.close_at_shutdown()
 
     # -- the tick -----------------------------------------------------------
 
@@ -373,6 +389,11 @@ class Presenter:
 
     def _drive_window(self, position: Optional[float]) -> None:
         if self._window is None:
+            if self._monitor.abortRequested():
+                # show() waits on Kodi's main thread holding the GIL, and
+                # while Kodi stops this service that never answers -- the
+                # freeze close_at_shutdown is about.
+                return
             self._open_window()
         if self._window is None:
             return

@@ -96,7 +96,7 @@ def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
 
 def run() -> None:
     monitor = xbmc.Monitor()
-    presenter = Presenter()
+    presenter = Presenter(monitor)
     log("service started")
     try:
         _loop(monitor, presenter)
@@ -105,7 +105,10 @@ def run() -> None:
     finally:
         # Whatever happened above, the window has to go. One left registered
         # pins the whole UI to it until Kodi is restarted -- which is what
-        # made a settings read throwing during teardown so expensive.
+        # made a settings read throwing during teardown so expensive. It goes
+        # without waiting on Kodi, though: by the time an abort lands here,
+        # Kodi's main thread is itself waiting for this script to end (see
+        # LyricsWindow.close_at_shutdown).
         try:
             presenter.close()
         except Exception:

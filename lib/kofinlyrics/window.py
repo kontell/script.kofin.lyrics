@@ -18,6 +18,12 @@ closer unidentified -- and a closed WindowXML frees the control tree while
 the Python wrappers keep their pointers. A write through one is a
 use-after-free that no except can catch (SIGSEGV in Control::setWidth,
 21.3).
+
+And one with a freeze behind it: as the service stops, the dialog is closed
+with close_at_shutdown(), never close(), and this object is kept until the
+dialog has gone. Kodi stops a service while its main thread waits for the
+script to end, and close() -- which freeing this object also runs -- waits
+for the main thread.
 """
 
 import math
@@ -46,6 +52,14 @@ MEASURE_ID_LAST = 3940
 # the one-read-per-id cache does not matter here.
 SENTINEL_ID = 3999
 XML_FILENAME = "script-kofin-lyrics.xml"
+# The ids Kodi gives Python windows (WINDOW_PYTHON_START..END), searched for
+# this dialog when its id was never learned; see close_at_shutdown.
+PYTHON_WINDOW_FIRST = 13000
+PYTHON_WINDOW_LAST = 13099
+# How long the shutdown close waits for Kodi to take the dialog down. It has
+# to outlast the five seconds Kodi gives a script it is stopping before it
+# kills it (PYTHON_SCRIPT_TIMEOUT); see close_at_shutdown.
+SHUTDOWN_CLOSE_WAIT_S = 30.0
 
 HOME_WINDOW = 10000
 # Written by us, read by the measure labels' $INFO binding. On Home rather
@@ -477,6 +491,66 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             super().close()
         except Exception:  # window already torn down with the player
             pass
+
+    def close_at_shutdown(self) -> None:
+        """Close the dialog as the service ends, never waiting with the GIL.
+
+        close() cannot be used here. xbmcgui's dialog close sends its request
+        to Kodi's main thread and waits for the answer holding the GIL
+        (WindowDialogMixin::close has no DelayedCallGuard). While Kodi stops
+        a service its main thread is waiting too: CScriptInvocationManager::
+        Stop holds the lock that Process() takes every frame until the script
+        has ended, and after five seconds takes the GIL to kill it. Each then
+        waits on the other for good, and Kodi has to be killed -- 22.0 RC1,
+        the three threads seen exactly so in gdb.
+
+        Nor may this object simply be let go while the dialog is up: the
+        bindings dispose a Window when its Python object is freed, and
+        dispose() calls that same close() -- dropping the last reference, or
+        the interpreter ending, deadlocks just the same.
+
+        So the close is posted -- Dialog.Close by id, queued for the main
+        thread -- and this waits, sleeping without the GIL, until the dialog
+        has gone. Usually that is a frame. While Kodi is stopping the service
+        it is the five seconds until Kodi gives up on the script: it kills it
+        and returns, its main thread runs the close, and the UI stalls for
+        those seconds instead of freezing for good. The caller has to hold
+        this object until the call returns. The id is the one _alive()
+        validated; if it was never learned, every visible window built from
+        this XML is closed.
+        """
+        self.closed = True
+        if self._window_id is not None:
+            window_ids = [self._window_id]
+        else:
+            window_ids = self._open_window_ids()
+        for window_id in window_ids:
+            xbmc.executebuiltin("Dialog.Close(%d,true)" % window_id)
+        deadline = time.monotonic() + SHUTDOWN_CLOSE_WAIT_S
+        while time.monotonic() < deadline and any(
+            xbmc.getCondVisibility("Window.IsVisible(%d)" % window_id)
+            for window_id in window_ids
+        ):
+            time.sleep(0.05)  # time.sleep, not xbmc.sleep: no callbacks pumped
+
+    @staticmethod
+    def _open_window_ids() -> List[int]:
+        """Every visible window built from this addon's XML.
+
+        Visibility is asked of Kodi first, so a wrapper is only built for a
+        window on screen; the sentinel then tells ours from any other
+        add-on's.
+        """
+        found: List[int] = []
+        for window_id in range(PYTHON_WINDOW_FIRST, PYTHON_WINDOW_LAST + 1):
+            if not xbmc.getCondVisibility("Window.IsVisible(%d)" % window_id):
+                continue
+            try:
+                xbmcgui.Window(window_id).getControl(SENTINEL_ID)
+            except Exception:
+                continue
+            found.append(window_id)
+        return found
 
     def onAction(self, action: xbmcgui.Action) -> None:
         action_id = action.getId()
