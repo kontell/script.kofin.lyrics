@@ -1,26 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- This addon's own lyrics window, used on skins that do not draw lyrics
-     themselves. Centred and self-contained: stock textures only, since a skin
-     that knows nothing about us cannot be relied on for art.
-
-     A plain list, not a fixedlist. A fixedlist pins the sung line to one row
-     from the very first line, so a track opens with the words mid-panel and
-     blank space above them. A plain list lets the cursor walk down from the
-     top, and the presenter scrolls it once the line reaches the middle -- see
-     Presenter._position_list.
-
-     Shown only over the visualisation window, which is the one place where
-     taking input costs nothing -- an addon window becomes the active window,
-     so anywhere else it would swallow navigation.
-
-     It is also the only place lyrics can be scrolled by hand. Kodi's keymap
-     binds the arrow keys in the visualisation window to StepBack/SkipNext, so
-     a list a skin draws there never sees them however it is focused; a window
-     of our own gets ordinary navigation. Hence a skin's passive overlay hands
-     over to this on demand. The panel sits in the same corner as contuary's
-     overlay and sizes itself to the lines, growing past the overlay's width
-     when a song's lines need it -- the authored geometry here is the
-     ceiling, not the size. -->
+<!-- This addon's own lyrics window. Stock textures only: the skin may not have
+     any to lend. A plain list, so a song starts at the top. The geometry here
+     is the largest the panel gets; window.py sizes it. -->
 <window>
 	<defaultcontrol always="true">100</defaultcontrol>
 	<controls>
@@ -52,9 +33,7 @@
 				<textcolor>FF00A4DC</textcolor>
 				<align>center</align>
 				<aligny>center</aligny>
-				<!-- Scrolls rather than truncating: the panel is sized to the
-				     lyrics, and an artist and title together are routinely
-				     longer than any line of the song. -->
+				<!-- Artist and title often run wider than the lyrics. -->
 				<scroll>true</scroll>
 				<label>$INFO[MusicPlayer.Artist] - $INFO[MusicPlayer.Title]</label>
 			</control>
@@ -94,14 +73,9 @@
 				</focusedlayout>
 			</control>
 		</control>
-		<!-- The rulers refit measures with. Auto width makes the renderer size
-		     each label to whatever text the measure property holds, and Python
-		     reads the result back; being invisible does not stop the
-		     measurement. A pool rather than one label because a control wrapper
-		     freezes its geometry at the first getControl() ever made for its id,
-		     so every measurement spends one virgin id -- see window.py. font14
-		     because that is the widest any lyric line renders (the focused row);
-		     sizing to it keeps the sung line inside the panel too. -->
+		<!-- Rulers for LyricsWindow.refit: auto width sizes each to the measure
+		     property's text, hidden or not; see MEASURE_ID_FIRST. font14 is the
+		     focused row's font, the widest a line renders. -->
 		<control type="label" id="3901"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
 		<control type="label" id="3902"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
 		<control type="label" id="3903"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
@@ -142,9 +116,7 @@
 		<control type="label" id="3938"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
 		<control type="label" id="3939"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
 		<control type="label" id="3940"><left>0</left><top>0</top><width>auto</width><height>60</height><font>font14</font><visible>false</visible><label>$INFO[Window(Home).Property(kofin.lyric.measure)]</label></control>
-		<!-- Exists only to prove a dialog id names this window: fetching it
-		     through a wrapper on any other dialog raises. Never read for
-		     geometry, so the one-read-per-id cache does not apply. -->
+		<!-- See SENTINEL_ID. -->
 		<control type="label" id="3999"><left>0</left><top>0</top><width>10</width><height>10</height><font>font14</font><visible>false</visible><label>-</label></control>
 	</controls>
 </window>

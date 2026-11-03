@@ -1,23 +1,11 @@
-# Tell repository.kontell that a release was published, so the Kodi repository
-# picks it up within seconds instead of at the next scheduled reconcile.
-#
-# Three things about this are easy to get wrong and expensive to debug:
-#
-# 1. `release` events only start a workflow run if the workflow file exists on the
-#    **default branch**. A copy on a feature branch, or on the non-default channel
-#    branch, never fires. Keep it on the default branch of this repo.
-# 2. An event raised by the default `GITHUB_TOKEN` does not start a workflow run.
-#    So publishing a draft from inside Actions with the default token will NOT
-#    trigger this — publish from the GitHub UI, or with your own credentials.
-#    `repository.kontell`'s scheduled reconcile is the backstop when that happens.
-# 3. Dispatching into another repository needs a token that is not this repo's
-#    `GITHUB_TOKEN`, which is scoped to this repo alone. A GitHub App installation
-#    token is used rather than a classic PAT: scoped to the one target repo, and
-#    nothing to re-issue when a PAT would have expired.
-#
-# Until the App is configured this workflow is inert on purpose — it reports that
-# it is unconfigured and succeeds, because the scheduled reconcile already keeps
-# the repository correct. See repository.kontell's docs/publishing.md.
+# Tell repository.kontell a release was published, so it updates now rather
+# than at its next scheduled reconcile.
+# - `release` events only run workflows on the default branch.
+# - Events raised with the default GITHUB_TOKEN start no workflows: publish
+#   drafts from the GitHub UI or with your own credentials.
+# - The dispatch needs a token for the other repo: a GitHub App's, scoped to it.
+# Until the App is configured this is a no-op. See repository.kontell's
+# docs/publishing.md.
 name: Notify repository
 
 on:
@@ -30,7 +18,7 @@ on:
         type: string
         default: ""
 
-# Needs nothing here: the cross-repo dispatch rides on the App token below.
+# The dispatch uses the App token.
 permissions: {}
 
 env:
@@ -62,7 +50,6 @@ jobs:
           app-id: ${{ vars.REPO_DISPATCH_APP_ID }}
           private-key: ${{ secrets.REPO_DISPATCH_APP_PRIVATE_KEY }}
           owner: kontell
-          # Scoped to the one repo it needs to write to.
           repositories: repository.kontell
 
       - name: Dispatch

@@ -1,8 +1,6 @@
 Kodistubs==21.*
 mypy
-# Pinned deliberately. An unpinned formatter in a CI gate means a black release
-# can turn the repo red overnight for reasons unrelated to any change here —
-# the same silent-breakage class the binary add-ons pin their runners against.
-# Bump this line on purpose, in its own commit.
+# Pinned: a new black release would fail CI with no change here. Bump it in a
+# commit of its own.
 black==26.5.1
 tox

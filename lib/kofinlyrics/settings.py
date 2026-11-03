@@ -1,15 +1,8 @@
-"""Addon settings, read fresh each time.
+"""Addon settings, read through a new Addon() each time: an instance caches
+them, so a long-lived one would not see changes.
 
-A new Addon() per read rather than one held at import: Kodi caches settings
-per instance, so a long-lived service would go on using whatever was set when
-it started.
-
-Nothing here raises. During addon teardown xbmcaddon.Addon() throws
-"Unknown addon id", and these are read from the service loop -- including from
-its own exception handler, by way of log(). A throw there killed the loop
-before it could close its window, which left the window registered and pinned
-the whole UI to it, recoverable only by restarting Kodi. A settings read is
-never worth that, so a failed one is just the default.
+Nothing here raises. Addon() throws during teardown, when the service still
+has its window to close, so a failed read returns the default.
 """
 
 from typing import Any
@@ -38,20 +31,12 @@ def show_automatically() -> bool:
 
 
 def show_untimed() -> bool:
-    """Whether lyrics with no timings are worth showing.
-
-    They cannot follow the music, so they sit there as a block that never
-    moves -- which some would rather not have on screen at all.
-    """
+    """Whether to show lyrics that have no timings."""
     return bool(_get("showUntimed", "getSettingBool"))
 
 
 def offset() -> float:
-    """Seconds to shift the timings by; positive means the lines come later.
-
-    Server-side .lrc files are routinely a beat out from the recording they
-    were matched to.
-    """
+    """Seconds to shift the timings by; positive means later."""
     try:
         return float(_get("offset", "getSettingNumber"))
     except (TypeError, ValueError):
@@ -59,13 +44,8 @@ def offset() -> float:
 
 
 def window_height() -> int:
-    """The lyrics panel's height in 1080p skin pixels, anchored to the top.
-
-    Exact pixels rather than a coarse choice: with a skin scaling its UI for
-    a large screen, only a number lets the panel sit flush with whatever the
-    skin draws beneath it. Applied to this addon's own window and, where the
-    skin opts in, to the skin's overlay too.
-    """
+    """The lyrics panel's height in 1080p skin pixels, for our window and an
+    opted-in skin overlay."""
     try:
         return int(_get("windowHeight", "getSettingInt"))
     except (TypeError, ValueError):
