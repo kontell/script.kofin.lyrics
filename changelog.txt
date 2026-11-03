@@ -1,3 +1,11 @@
+v0.3.1
+• Fixed the lyrics sticking to the top row and scrolling in jumps on Kodi 22: the line being sung sits in the middle again, and the lyrics move up one line at a time
+• Fixed lyrics without timings opening part-way into the song with a line picked out, left over from the previous song. They now open at the top
+• Seeking back no longer sends the line being sung to the top row
+• The add-on's own lyrics window now picks out the line being sung as soon as it opens, instead of at the next line
+• With a skin that keeps its lyrics overlay at its own height, the line being sung now sits in the middle of it too
+• Fixed Kodi freezing until it was restarted when the add-on was updated or disabled while its own lyrics window was open. Kodi now pauses for a few seconds instead
+
 v0.3.0
 - Publish four lyric window widths instead of three
 
