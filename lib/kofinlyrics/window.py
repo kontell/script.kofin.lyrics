@@ -252,6 +252,10 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         """
         return paging.lead_rows(rows_for(self._target_height), PAGE_ROWS)
 
+    def middle_row(self) -> int:
+        """The row the sung line settles on at the current height."""
+        return paging.middle_row(rows_for(self._target_height))
+
     def _fill(self) -> None:
         """Put the current lines on the list, plus a blank tail.
 

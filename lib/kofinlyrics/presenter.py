@@ -293,6 +293,7 @@ class Presenter:
                 % (control, index)
             ),
             active,
+            paging.middle_row(self._skin_visible),
             paging.lead_rows(self._skin_visible, SKIN_PAGE_ROWS),
             (_skin_list_length(control) or len(self._lines)) - 1,
         )
@@ -377,7 +378,13 @@ class Presenter:
         lead = window.lead_rows()
         # The window's list carries lead_rows() of blank tail, so the drag
         # target exists right up to the last line.
-        self._position_list(window.highlight, active, lead, len(self._lines) - 1 + lead)
+        self._position_list(
+            window.highlight,
+            active,
+            window.middle_row(),
+            lead,
+            len(self._lines) - 1 + lead,
+        )
 
     def _open_window(self) -> None:
         try:
@@ -410,7 +417,7 @@ class Presenter:
 
     @staticmethod
     def _position_list(
-        select: Callable[[int], None], active: int, lead: int, last: int
+        select: Callable[[int], None], active: int, mid: int, lead: int, last: int
     ) -> None:
         """Put ``active`` on the list, sitting mid-view once it gets there.
 
@@ -421,15 +428,25 @@ class Presenter:
         short it has been resized, so the bottom row may not even be on
         screen.
 
-        Selecting a line ``lead`` further on first drags the view down so
-        that line sits at the page bottom, which leaves the sung line
-        ``lead`` rows above it -- the middle of the rows actually visible,
-        by the lead the caller chose (paging.lead_rows); putting the cursor
-        back on it then moves no view, because it is already showing. Each
-        new line is then a single one-row scroll. Early in a track neither
-        selection scrolls anything, so the cursor simply walks down from the
-        top. ``last`` caps the drag at the list's real end.
+        Selecting a line ``lead`` further on drags the view down so that
+        line sits at the page bottom, which leaves the sung line ``lead``
+        rows above it -- row ``mid``, the middle of the rows actually
+        visible, by the lead the caller chose (paging.lead_rows); putting
+        the cursor back on it then moves no view, because it is already
+        showing. Each new line is then a single one-row scroll.
+
+        The drag only ever moves the view down, so a seek backwards would
+        leave the sung line above the view, and Kodi puts a line selected
+        there on the top row. Selecting the line ``mid`` above the sung one
+        first is what brings the view back: Kodi tops the view with it,
+        whatever the page, leaving the sung line on row ``mid``. Played
+        forwards, that line is already in view and only the cursor moves.
+
+        Early in a track no selection scrolls anything, so the cursor simply
+        walks down from the top. ``last`` caps the drag at the list's real
+        end.
         """
+        select(max(0, active - mid))
         select(min(active + lead, last))
         select(active)
 

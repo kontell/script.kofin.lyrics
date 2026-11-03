@@ -50,6 +50,12 @@ def page_follows_height() -> bool:
     return code is None or code >= PAGE_FOLLOWS_HEIGHT_FROM
 
 
+def middle_row(visible: int) -> int:
+    """The row the sung line settles on: mid-way down ``visible`` rows,
+    the upper of the two when there is no single middle."""
+    return (visible - 1) // 2
+
+
 def lead_rows(visible: int, authored: int) -> int:
     """The lead that settles the sung line mid-way down ``visible`` rows.
 
@@ -58,4 +64,4 @@ def lead_rows(visible: int, authored: int) -> int:
     is at its authored height.
     """
     page = visible if page_follows_height() else authored
-    return max(1, (page - 1) - (visible - 1) // 2)
+    return max(1, (page - 1) - middle_row(visible))
