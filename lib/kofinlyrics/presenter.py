@@ -176,9 +176,11 @@ class Presenter:
         properties are cleared even if Kodi kills the script during its wait.
         """
         window, self._window = self._window, None
-        self.stop_song()
-        if window is not None:
-            window.close_at_shutdown()
+        try:
+            self.stop_song()
+        finally:
+            if window is not None:
+                window.close_at_shutdown()
 
     # -- the tick -----------------------------------------------------------
 
