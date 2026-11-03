@@ -7,7 +7,7 @@
   <extension point="xbmc.service" library="service.py"/>
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
-    <license>GPL-3.0-only</license>
+    <license>GPL-2.0-or-later</license>
     <source>https://github.com/kontell/script.kofin.lyrics</source>
     <forum>https://forum.kodi.tv/showthread.php?tid=388267</forum>
     <website>https://github.com/kontell/plugin.video.kofin/wiki/Lyrics</website>
