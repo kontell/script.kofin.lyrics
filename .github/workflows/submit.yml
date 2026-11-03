@@ -1,0 +1,83 @@
+# Submits a release to the official Kodi repository: one commit,
+# "[script.kofin.lyrics] <version>", pushed to the kontell/repo-scripts fork
+# and opened as a pull request against xbmc/repo-scripts:piers. Run by hand
+# (Actions -> Submit to Kodi -> Run workflow) with the release's tag.
+#
+# Needs two repository secrets: GH_TOKEN, a classic token with public_repo
+# scope, which pushes to the fork and opens the pull request; and EMAIL, the
+# address the submission commit is authored with.
+name: Submit to Kodi
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to submit, e.g. v0.3.1"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    name: submit
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the secrets are set
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          EMAIL: ${{ secrets.EMAIL }}
+        run: |
+          if [[ -z "$GH_TOKEN" || -z "$EMAIL" ]]; then
+            echo "::error::Set the GH_TOKEN and EMAIL repository secrets first."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+          # The submitter runs third-party code in this workspace.
+          persist-credentials: false
+
+      - name: Use the current export-ignore list for an older tag
+        # v0.3.1 predates .gitattributes. git archive also reads
+        # .git/info/attributes, so the tag is packed by today's list.
+        if: hashFiles('.gitattributes') == ''
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git fetch -q --depth=1 origin "$DEFAULT_BRANCH"
+          git show FETCH_HEAD:.gitattributes > .git/info/attributes
+
+      - name: Check what will be submitted
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          version="$(python3 -c "
+          import xml.etree.ElementTree as ET
+          print(ET.parse('addon.xml').getroot().get('version'))
+          ")"
+          if [[ "$TAG" != "v$version" ]]; then
+            echo "::error::Tag $TAG does not match addon.xml version $version."
+            exit 1
+          fi
+          files="$(git archive HEAD | tar -t)"
+          echo "$files"
+          if grep -E '^(\.github|tools)/|^(\.gitattributes|\.gitignore|mypy\.ini|requirements-dev\.txt|tox\.ini)$' <<< "$files"; then
+            echo "::error::Development files would be submitted."
+            exit 1
+          fi
+
+      - name: Open the pull request
+        uses: xbmc/action-kodi-addon-submitter@1b063d1bd4ad94e293f41b6d2951022c134c25ea # v1.3
+        with:
+          # The action's descriptions of these two inputs are swapped; the
+          # values are right.
+          kodi-repository: repo-scripts
+          kodi-version: piers
+          addon-id: script.kofin.lyrics
+        env:
+          GH_USERNAME: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          EMAIL: ${{ secrets.EMAIL }}
