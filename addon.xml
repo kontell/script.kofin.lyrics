@@ -13,6 +13,18 @@
     <website>https://github.com/kontell/plugin.video.kofin/wiki/Lyrics</website>
     <summary lang="en_GB">Song lyrics from your Jellyfin server</summary>
     <description lang="en_GB">Shows lyrics from a Jellyfin server, either in a window drawn by this add-on or handed to a skin.</description>
+    <news>v0.3.1
+• Fixed lyrics stuck on the top row and scrolling in jumps on Kodi 22
+• Fixed untimed lyrics opening mid-song
+• Fixed the sung line jumping to the top after seeking back
+• Fixed the lyrics window starting on the first line when opened mid-song
+• Fixed the first arrow press in the lyrics window not scrolling
+• Fixed scrolling by hand running past the end of the lyrics
+• Fixed the sung line sitting high in skins that don't resize their overlay
+• Fixed Kodi freezing if the add-on was updated or disabled with its window open
+• Added machine translations for 26 languages, pending review by native speakers
+• Removed the debug logging setting; use Kodi's debug logging instead
+• Relicensed under GPL v2 or later</news>
     <assets>
       <icon>resources/icon.png</icon>
     </assets>
