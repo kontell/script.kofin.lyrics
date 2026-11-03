@@ -382,8 +382,8 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         """Close the dialog as the service stops, without deadlocking Kodi.
 
         While Kodi stops a service, its main thread waits for the script, and
-        close() -- which freeing this object also runs -- waits for the main
-        thread holding the GIL. At its 5 s timeout Kodi takes the GIL to kill
+        close() -- which freeing this object also runs while the dialog is
+        visible -- waits for the main thread holding the GIL. At its 5 s timeout Kodi takes the GIL to kill
         the script, and nothing moves again. So the close is posted, and this
         sleeps without the GIL until the dialog is gone; the caller must keep
         this object until then.
