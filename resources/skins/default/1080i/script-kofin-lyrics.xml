@@ -3,7 +3,6 @@
      any to lend. A plain list, so a song starts at the top. The geometry here
      is the largest the panel gets; window.py sizes it. -->
 <window>
-	<defaultcontrol always="true">100</defaultcontrol>
 	<controls>
 		<control type="group">
 			<animation type="WindowOpen" reversible="false">

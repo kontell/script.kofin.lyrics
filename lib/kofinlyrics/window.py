@@ -142,6 +142,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             self._list = None
             return
         self._fill()
+        self.setFocusId(LIST_ID)  # only now: an empty list cannot take focus
         # The estimate now, so the opening fade plays at about the right
         # width; refit() measures.
         self._fit(self._estimate_width(self._lines))
