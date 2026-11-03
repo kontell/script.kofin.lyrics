@@ -33,13 +33,6 @@
           <control type="edit" format="integer"/>
         </setting>
       </group>
-      <group id="2">
-        <setting id="debug" type="boolean" label="30007" help="30008">
-          <level>0</level>
-          <default>false</default>
-          <control type="toggle"/>
-        </setting>
-      </group>
     </category>
   </section>
 </settings>

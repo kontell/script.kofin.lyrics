@@ -16,7 +16,7 @@ PROP_SUMMON = "kofin.lyric.summon"
 
 def summon() -> None:
     if not source.has_lyrics():
-        xbmc.log("[kofin-lyrics] summoned with no lyrics to show", xbmc.LOGINFO)
+        xbmc.log("[kofin-lyrics] summoned with no lyrics to show", xbmc.LOGDEBUG)
         return
     # Left to the service's next tick: the button also closes the OSD, which
     # is still up for anything done from here. Timestamped so a second press

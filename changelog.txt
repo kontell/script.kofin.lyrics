@@ -6,6 +6,7 @@ v0.3.1
 • Fixed the first arrow press in the lyrics window not scrolling
 • Fixed the sung line sitting high in skins that don't resize their overlay
 • Fixed Kodi freezing if the add-on was updated or disabled with its window open
+• Removed the debug logging setting; use Kodi's debug logging instead
 
 v0.3.0
 • Four lyrics window widths instead of three

@@ -40,11 +40,7 @@ PANEL_MEDIUM = 1000
 
 
 def log(message: str) -> None:
-    try:
-        level = xbmc.LOGINFO if settings.debug() else xbmc.LOGDEBUG
-    except Exception:
-        level = xbmc.LOGDEBUG
-    xbmc.log("[kofin-lyrics] %s" % message, level)
+    xbmc.log("[kofin-lyrics] %s" % message, xbmc.LOGDEBUG)
 
 
 def _skin_list_position(control: int) -> int:

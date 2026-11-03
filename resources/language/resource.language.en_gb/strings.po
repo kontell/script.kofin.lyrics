@@ -35,14 +35,6 @@ msgctxt "#30006"
 msgid "Raise it if lines come too early, lower it if they come too late."
 msgstr ""
 
-msgctxt "#30007"
-msgid "Enable debug logging"
-msgstr ""
-
-msgctxt "#30008"
-msgid "Logs what the add-on does. Leave off unless troubleshooting."
-msgstr ""
-
 msgctxt "#30009"
 msgid "Lyrics window height (pixels)"
 msgstr ""

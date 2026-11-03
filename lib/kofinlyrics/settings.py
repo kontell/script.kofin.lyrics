@@ -14,7 +14,6 @@ DEFAULTS = {
     "showUntimed": True,
     "offset": 0.0,
     "windowHeight": 480,
-    "debug": False,
 }
 
 
@@ -50,7 +49,3 @@ def window_height() -> int:
         return int(_get("windowHeight", "getSettingInt"))
     except (TypeError, ValueError):
         return int(DEFAULTS["windowHeight"])
-
-
-def debug() -> bool:
-    return bool(_get("debug", "getSettingBool"))
