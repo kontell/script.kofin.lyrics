@@ -27,6 +27,8 @@ from typing import Any, List, Optional, cast
 import xbmc
 import xbmcgui
 
+from kofinlyrics import paging
+
 LIST_ID = 100
 PANEL_ID = 101
 TITLE_ID = 102
@@ -141,12 +143,9 @@ def rows_for(height: int) -> int:
     return max(3, (height - TITLE_STRIP - BOTTOM_PAD) // ROW_HEIGHT)
 
 
-# A list resized at runtime keeps the page it was authored with: scrolling
-# still treats the view as this many rows, so a selected line rides at the
-# bottom of the *authored* page however short the visible list is. Verified
-# live -- at 11 visible rows of a 13-row page the sung line sat two rows
-# below centre, and shorter than that it left the window entirely. Lead
-# arithmetic therefore works in page rows, not visible rows.
+# The page the list is authored with. Whether a runtime resize keeps it or
+# recalculates it from the new height depends on the Kodi build, so the lead
+# is worked out against whichever is in force -- see paging.
 PAGE_ROWS = rows_for(FULL_HEIGHT)
 
 
@@ -247,13 +246,11 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
     def lead_rows(self) -> int:
         """How far below the sung line to drag the view; see the presenter.
 
-        Selecting ``lead`` ahead leaves the sung line that far above the
-        *authored* page's bottom row -- the page a runtime-resized list
-        still scrolls by -- which lands it mid-way down the rows actually
-        visible at the current height.
+        Counted against the page the resized list really scrolls by (see
+        paging), which lands the sung line mid-way down the rows visible at
+        the current height.
         """
-        visible = rows_for(self._target_height)
-        return max(1, (PAGE_ROWS - 1) - (visible - 1) // 2)
+        return paging.lead_rows(rows_for(self._target_height), PAGE_ROWS)
 
     def _fill(self) -> None:
         """Put the current lines on the list, plus a blank tail.

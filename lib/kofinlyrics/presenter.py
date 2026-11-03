@@ -21,7 +21,7 @@ import xbmcaddon
 import xbmcgui
 
 from kofinlyrics import lyrics as source
-from kofinlyrics import settings
+from kofinlyrics import paging, settings
 from kofinlyrics.window import (
     FULL_HEIGHT,
     XML_FILENAME,
@@ -42,10 +42,10 @@ WINDOW_VISUALISATION = 12006
 # itself is the user's setting, shared with this addon's own window.
 SKIN_ROW_HEIGHT = 60
 SKIN_VERTICAL_INSET = 20
-# The page the skin's list was authored with. A list resized at runtime
-# keeps scrolling by its authored page (verified live -- see
-# LyricsWindow.lead_rows), so the overlay's lead works in these rows however
-# short the visible list is.
+# The page the skin's list is authored with. Whether a runtime resize keeps
+# it or recalculates it from the new height depends on the Kodi build, so
+# the overlay's lead is worked out against whichever is in force -- see
+# paging.
 SKIN_PAGE_ROWS = (FULL_HEIGHT - SKIN_VERTICAL_INSET) // SKIN_ROW_HEIGHT
 
 # The overlay widths skin.contuary authors, narrowest first (Includes_Lyrics.xml).
@@ -127,6 +127,10 @@ class Presenter:
         # and whenever its window reloaded -- a reload rebuilds the controls
         # at their authored size, which silently discards anything set.
         self._skin_stale = True
+        # Rows the skin's overlay really shows: the height setting's once its
+        # geometry is applied, the authored page where the skin has not opted
+        # in to being resized.
+        self._skin_visible = SKIN_PAGE_ROWS
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -209,6 +213,13 @@ class Presenter:
         )
         control = 0 if self._interactive else source.skin_control_id()
 
+        if not (control and visualisation):
+            # The skin's overlay is not being driven. A skin reload rebuilds
+            # its window at the authored size while it is away, so the
+            # geometry is pushed again when it is back -- which costs nothing
+            # when the window kept it.
+            self._skin_stale = True
+
         if control:
             # The skin draws. Our own window must not also be up -- that is the
             # double-render that makes two lyrics addons unusable together.
@@ -252,9 +263,20 @@ class Presenter:
             # gone by the time it is back, so it is pushed again then.
             self._skin_stale = True
             return
-        if self._skin_stale and self._apply_skin_geometry(control):
+        resized = False
+        if self._skin_stale:
+            applied = self._apply_skin_geometry(control)
+            if applied is None:
+                return  # mid-reload; pushed again next tick
             self._skin_stale = False
+            resized = applied
         if not self._following:
+            return
+        if resized:
+            # Positioned from the next tick, not this one. The list takes its
+            # new height on Kodi's next frame, and a selection queued now can
+            # be handled before that -- against the old page.
+            self._sent = None
             return
         active = self._active(position)
         if active is None:
@@ -262,7 +284,6 @@ class Presenter:
         if active == self._sent and where == active:
             return
         self._sent = active
-        visible = _skin_rows(settings.window_height())
         self._position_list(
             lambda index: xbmc.executebuiltin(
                 # absolute: without it the position is taken relative to the
@@ -272,37 +293,50 @@ class Presenter:
                 % (control, index)
             ),
             active,
-            max(1, (SKIN_PAGE_ROWS - 1) - (visible - 1) // 2),
+            paging.lead_rows(self._skin_visible, SKIN_PAGE_ROWS),
             (_skin_list_length(control) or len(self._lines)) - 1,
         )
 
-    def _apply_skin_geometry(self, control: int) -> bool:
+    def _apply_skin_geometry(self, control: int) -> Optional[bool]:
         """Push the user's height onto the skin's overlay, if it opted in.
 
         Skin XML cannot read geometry from a property, so exact pixel heights
         have to be written onto the skin's controls from here. A skin opts in
         by publishing its backdrop ids as kofin.lyric.panel; without them
-        nothing is touched, and at the full height there is nothing to say.
+        nothing is touched, and the overlay shows its authored page. The full
+        height is written like any other, not skipped: it puts back a list
+        shortened earlier in the window's life, so the rows on screen always
+        match the setting the lead is worked out from.
+
+        True when the list's height changed -- and with it, on Kodi 22 RC1
+        and later, its page -- False when it already had it, None when the
+        window was mid-reload and nothing could be written.
 
         One Window wrapper per application, not per tick: constructing
-        wrappers on a live window at polling rate has crashed Kodi.
+        wrappers on a live window at polling rate has crashed Kodi. A fresh
+        wrapper is also what makes the height read here the live one: a
+        control wrapper copies its geometry once, when it is created.
         """
-        height = settings.window_height()
         panel_ids = source.skin_panel_ids()
-        if not panel_ids or height >= FULL_HEIGHT:
-            return True
+        if not panel_ids:
+            self._skin_visible = SKIN_PAGE_ROWS
+            return False
+        height = min(FULL_HEIGHT, settings.window_height())
+        rows = _skin_rows(height)
         try:
             visualisation = xbmcgui.Window(WINDOW_VISUALISATION)
             for panel_id in panel_ids:
                 visualisation.getControl(panel_id).setHeight(height)
-            visualisation.getControl(control).setHeight(
-                _skin_rows(height) * SKIN_ROW_HEIGHT
-            )
-            log("skin overlay height set to %d" % height)
-            return True
+            skin_list = visualisation.getControl(control)
+            resized = skin_list.getHeight() != rows * SKIN_ROW_HEIGHT
+            skin_list.setHeight(rows * SKIN_ROW_HEIGHT)
         except Exception:
             # Mid-reload; stays stale and is pushed again next tick.
-            return False
+            return None
+        self._skin_visible = rows
+        if resized:
+            log("skin overlay height set to %d" % height)
+        return resized
 
     # -- driving our own window ---------------------------------------------
 
@@ -382,17 +416,19 @@ class Presenter:
 
         A list only scrolls when the cursor reaches the edge of its page, so
         selecting the sung line alone walks the cursor from the top down to
-        the page's *bottom* row and scrolls from there -- and the page is the
-        one the list was authored with, however short it has been resized,
-        so the bottom row may not even be on screen.
+        the page's *bottom* row and scrolls from there -- and on Kodi before
+        22.0 RC1 the page is the one the list was authored with, however
+        short it has been resized, so the bottom row may not even be on
+        screen.
 
         Selecting a line ``lead`` further on first drags the view down so
         that line sits at the page bottom, which leaves the sung line
         ``lead`` rows above it -- the middle of the rows actually visible,
-        by the lead the caller chose; putting the cursor back on it then
-        moves no view, because it is already showing. Early in a track
-        neither selection scrolls anything, so the cursor simply walks down
-        from the top. ``last`` caps the drag at the list's real end.
+        by the lead the caller chose (paging.lead_rows); putting the cursor
+        back on it then moves no view, because it is already showing. Each
+        new line is then a single one-row scroll. Early in a track neither
+        selection scrolls anything, so the cursor simply walks down from the
+        top. ``last`` caps the drag at the list's real end.
         """
         select(min(active + lead, last))
         select(active)
