@@ -22,6 +22,7 @@ EXCLUDE_ANYWHERE = {
     # Agent config can be in any directory, and the build copies ignored files.
     ".claude",
     ".git",
+    ".tox",
     ".venv",
     "venv",
     "__pycache__",
