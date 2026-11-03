@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Låttexter från din Jellyfin-server",
+  "Addon Description": "Visar låttexter från en Jellyfin-server, antingen i ett fönster som det här tillägget ritar eller överlämnade till en skin.",
+  "#30001": "Visa låttexter automatiskt",
+  "#30002": "Visa låttexten när varje låt börjar, inte bara när du trycker på låttextknappen. Vissa skins ignorerar detta.",
+  "#30003": "Visa osynkroniserade låttexter",
+  "#30004": "Osynkroniserade låttexter står still i stället för att följa låten. Vissa skins ignorerar detta.",
+  "#30005": "Tidsförskjutning (sekunder)",
+  "#30006": "Höj den om raderna kommer för tidigt och sänk den om de kommer för sent.",
+  "#30009": "Höjd på låttextfönstret (pixlar)",
+  "#30010": "Från skärmens överkant. 480 lämnar uppspelningsinformationen fri; 800 är full höjd."
+}

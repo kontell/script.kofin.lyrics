@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Sangtekster fra Jellyfin-serveren din",
+  "Addon Description": "Viser sangtekster fra en Jellyfin-server, enten i et vindu som dette tillegget tegner, eller overlevert til et skall.",
+  "#30001": "Vis sangtekster automatisk",
+  "#30002": "Vis sangteksten når hver sang starter, ikke bare når du trykker på sangtekstknappen. Noen skall ignorerer dette.",
+  "#30003": "Vis usynkroniserte sangtekster",
+  "#30004": "Usynkroniserte sangtekster står stille i stedet for å følge sangen. Noen skall ignorerer dette.",
+  "#30005": "Tidsforskyvning (sekunder)",
+  "#30006": "Øk den hvis linjene kommer for tidlig, og senk den hvis de kommer for sent.",
+  "#30009": "Høyde på sangtekstvinduet (piksler)",
+  "#30010": "Fra toppen av skjermen. 480 holder avspillingsinfoen fri; 800 er full høyde."
+}

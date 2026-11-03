@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
 """Build a Kodi-installable zip of the addon.
 
-Packages the working tree into ``<outdir>/<id>-<version>.zip`` with every file
-nested under a top-level ``<id>/`` directory, exactly as Kodi's "Install from
-zip file" expects, and as the repository's ``scripts/update-*.sh`` expect of a
-release asset. Development-only files are left out, so the zip carries only
-what the addon needs at runtime. The id and version come straight from
-``addon.xml``.
-
-Kept deliberately in step with plugin.video.kofin's tools/build.py -- the two
-addons are released together and a difference between their zips is a
-difference nobody would look for.
+Writes ``<outdir>/<id>-<version>.zip``, each file under a top-level ``<id>/``
+directory, leaving out development-only files. Keep in step with
+plugin.video.kofin's tools/build.py.
 
 Usage: build.py [OUTDIR]      (default OUTDIR: ./dist)
 """
@@ -26,12 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # Path components skipped wherever they appear: VCS, virtualenvs, caches.
 EXCLUDE_ANYWHERE = {
     "CLAUDE.md",
-    # Sits alongside CLAUDE.md rather than in EXCLUDE_TOP because agent config
-    # can be directory-scoped, and it holds local settings that must never
-    # reach an installed addon. It is gitignored, but the build copies the
-    # working tree, so being ignored is not enough on its own.
+    # Agent config can be in any directory, and the build copies ignored files.
     ".claude",
     ".git",
+    ".tox",
     ".venv",
     "venv",
     "__pycache__",
@@ -39,9 +30,8 @@ EXCLUDE_ANYWHERE = {
     ".pytest_cache",
     ".DS_Store",
 }
-# Repo-root entries that are development-only, plus the build's own output
-# directory and common editor/CI folders. README.md stays: it is the only
-# documentation of the contract a skin has to implement.
+# Development-only repo-root entries. README.md ships: it documents the skin
+# contract.
 EXCLUDE_TOP = {
     "docs",
     "tests",
@@ -57,7 +47,6 @@ EXCLUDE_TOP = {
     ".vscode",
     ".idea",
 }
-# Suffixes never shipped (byte-compiled Python).
 EXCLUDE_SUFFIX = (".pyc", ".pyo")
 
 
@@ -104,10 +93,7 @@ def build(outdir):
             arcname = (Path(addon_id) / rel).as_posix()
             archive.write(ROOT / rel, arcname=arcname)
 
-    # Verify the result is a well-formed archive Kodi will accept. Both entry
-    # points are checked by name: an addon whose <extension> library is missing
-    # installs cleanly and then does nothing, which is a miserable way to find
-    # out the build skipped a file.
+    # An addon missing an entry point installs, then does nothing.
     with zipfile.ZipFile(zip_path) as archive:
         broken = archive.testzip()
         if broken is not None:

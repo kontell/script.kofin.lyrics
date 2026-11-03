@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Teksty utworów z serwera Jellyfin",
+  "Addon Description": "Wyświetla teksty utworów z serwera Jellyfin – w oknie rysowanym przez ten dodatek albo przekazując je skórce.",
+  "#30001": "Pokazuj teksty automatycznie",
+  "#30002": "Pokazuje tekst na początku każdego utworu, a nie tylko po naciśnięciu przycisku tekstów. Niektóre skórki to ignorują.",
+  "#30003": "Pokazuj niezsynchronizowane teksty",
+  "#30004": "Niezsynchronizowane teksty stoją w miejscu zamiast podążać za utworem. Niektóre skórki to ignorują.",
+  "#30005": "Przesunięcie czasu (sekundy)",
+  "#30006": "Zwiększ je, jeśli wiersze pojawiają się za wcześnie, a zmniejsz, jeśli za późno.",
+  "#30009": "Wysokość okna tekstów (piksele)",
+  "#30010": "Od górnej krawędzi ekranu. 480 nie zasłania informacji o odtwarzaniu; 800 to pełna wysokość."
+}

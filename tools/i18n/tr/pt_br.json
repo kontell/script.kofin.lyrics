@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Letras de músicas do seu servidor Jellyfin",
+  "Addon Description": "Mostra letras de um servidor Jellyfin, em uma janela desenhada por este add-on ou entregando-as a uma skin.",
+  "#30001": "Mostrar letras automaticamente",
+  "#30002": "Mostra a letra quando cada música começa, não só quando você aperta o botão de letras. Algumas skins ignoram isso.",
+  "#30003": "Mostrar letras não sincronizadas",
+  "#30004": "Letras não sincronizadas ficam paradas em vez de acompanhar a música. Algumas skins ignoram isso.",
+  "#30005": "Deslocamento de tempo (segundos)",
+  "#30006": "Aumente se as linhas vierem cedo demais e diminua se vierem tarde demais.",
+  "#30009": "Altura da janela de letras (pixels)",
+  "#30010": "A partir do topo da tela. 480 deixa livre a informação de reprodução; 800 é a altura total."
+}

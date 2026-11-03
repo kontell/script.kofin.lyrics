@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Songteksten van je Jellyfin-server",
+  "Addon Description": "Toont songteksten van een Jellyfin-server, in een eigen venster van deze add-on of doorgegeven aan een skin.",
+  "#30001": "Songteksten automatisch tonen",
+  "#30002": "Toon de songtekst zodra elk nummer begint, niet alleen als je op de songtekstknop drukt. Sommige skins negeren dit.",
+  "#30003": "Niet-gesynchroniseerde songteksten tonen",
+  "#30004": "Niet-gesynchroniseerde songteksten blijven stilstaan in plaats van het nummer te volgen. Sommige skins negeren dit.",
+  "#30005": "Tijdverschuiving (seconden)",
+  "#30006": "Verhoog de waarde als regels te vroeg komen en verlaag die als ze te laat komen.",
+  "#30009": "Hoogte van het songtekstvenster (pixels)",
+  "#30010": "Vanaf de bovenkant van het scherm. 480 laat de afspeelinformatie vrij; 800 is de volledige hoogte."
+}

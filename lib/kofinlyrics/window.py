@@ -1,23 +1,13 @@
 """This addon's own lyrics window, for skins that draw none themselves.
 
-Owning the window means the list can be driven directly with selectItem
-rather than through the Control.SetFocus builtin a skin's list needs.
+Everything here runs on the service thread, callbacks included: Kodi delivers
+onInit and onAction inside the thread's xbmc.sleep and waitForAbort calls.
+Callbacks must stay trivial -- measuring from onInit crashes Kodi -- so
+measuring happens in refit(), called from the service loop.
 
-Everything here runs on the service thread. Window callbacks are not the
-exception but the proof: Kodi delivers onInit and onAction *inside* the
-owning thread's xbmc.sleep and waitForAbort calls -- makePendingCalls pumps
-them -- so a callback is this same thread, re-entered. That is why callbacks
-must stay trivial: onInit doing the measurement below re-entered the GUI from
-a window still being activated and crashed Kodi outright (SIGSEGV, 21.3).
-Measuring therefore happens in refit(), called from the service loop once
-the window is up, never from a callback.
-
-One more rule with a crash behind it: every control write checks _alive()
-first. Kodi can close this dialog from its own side -- observed in the wild,
-closer unidentified -- and a closed WindowXML frees the control tree while
-the Python wrappers keep their pointers. A write through one is a
-use-after-free that no except can catch (SIGSEGV in Control::setWidth,
-21.3).
+Kodi can close this dialog itself, freeing the controls behind our wrappers,
+and a write through a freed control crashes Kodi. Every control write checks
+_alive() first.
 """
 
 import math
@@ -27,77 +17,57 @@ from typing import Any, List, Optional, cast
 import xbmc
 import xbmcgui
 
+from kofinlyrics import paging
+
 LIST_ID = 100
 PANEL_ID = 101
 TITLE_ID = 102
-# The pool of hidden auto-width labels the panel is measured with; see
-# refit. A pool because each is readable once, ever -- a control wrapper
-# copies its geometry out of the live control at the first getControl() made
-# for its id and returns that snapshot forever. (A fresh
-# xbmcgui.Window(dialog_id) wrapper per read does defeat that cache, but
-# constructing wrappers on a live window at polling rate crashed Kodi --
-# twice, same site, both threads -- so ids are spent instead.)
+# Hidden auto-width labels the panel is measured with. Each can be read once:
+# a control wrapper keeps the geometry of its first getControl().
 MEASURE_ID_FIRST = 3901
 MEASURE_ID_LAST = 3940
-# A hidden label that exists only to prove a dialog id is ours: fetching it
-# through a wrapper on some other dialog raises. Never read for geometry, so
-# the one-read-per-id cache does not matter here.
+# A hidden label only this XML has, to tell our dialog's id from others'.
 SENTINEL_ID = 3999
 XML_FILENAME = "script-kofin-lyrics.xml"
+# Kodi's WINDOW_PYTHON_START..END.
+PYTHON_WINDOW_FIRST = 13000
+PYTHON_WINDOW_LAST = 13099
+# Must outlast the 5 s Kodi gives a script it is stopping (PYTHON_SCRIPT_TIMEOUT).
+SHUTDOWN_CLOSE_WAIT_S = 30.0
 
 HOME_WINDOW = 10000
-# Written by us, read by the measure labels' $INFO binding. On Home rather
-# than on this window because a label can only bind a property it can name,
-# and this window's id is only known at runtime.
+# Bound by the measure labels; on Home because this window's id is only known
+# at runtime.
 PROP_MEASURE = "kofin.lyric.measure"
 
-# The panel as authored, and how narrow it may shrink to. The authored width
-# is the ceiling the measurement can grow the panel to, so it is set for the
-# longest lines real songs carry -- a 74-character line renders ~1120px at
-# font14, and an 800 ceiling kept every such song clamped with its lines
-# truncated. The right edge stays anchored; only the left edge moves.
+# Panel width bounds. FULL_WIDTH, the authored width, fits a ~74-character
+# line at font14; the right edge stays put.
 FULL_WIDTH = 1240
 MIN_WIDTH = 300
-# The panel as authored vertically, and how short the height setting may
-# take it. Top-anchored: the height grows and shrinks at the bottom edge.
+# Panel height bounds; the top edge stays put.
 FULL_HEIGHT = 800
 MIN_HEIGHT = 260
-# The inset of the list and the title inside the panel, on both sides.
+# Inset of the list and title inside the panel, each side.
 LIST_LEFT = 20
-# Air between the widest line and the panel edges, shared between both sides.
+# Total space beside the widest line, split between both sides.
 PADDING = 80
-# Vertical framing: the title strip above the list, breathing room below,
-# and the row height every layout in the XML uses.
+# Vertical framing; ROW_HEIGHT must match the XML's item layouts.
 TITLE_STRIP = 60
 BOTTOM_PAD = 20
 ROW_HEIGHT = 60
 
-# How long the renderer gets to show a measure line before it is read. Not a
-# poll: reading is what spends the label, so there is exactly one read.
+# How long the renderer gets to lay out a measure line before its one read.
 SETTLE_MS = 400
 # Measurement rounds that come back empty before a track keeps the estimate.
 PROBE_ATTEMPTS = 3
 
-# The resize glide: how the panel moves between songs. Stepped from the
-# service thread because it is the only smooth mechanism there is -- skin
-# animations cannot be triggered from Python (setVisible ignores
-# VisibleChange and setAnimations alike, verified on 21.3), and skin
-# geometry cannot bind a property. Positions come from the clock, not a
-# step counter: xbmc.sleep pumps pending callbacks, so a step can overrun
-# during exactly the busy moments a track change brings, and a counted
-# tween fell behind the curve and read as jerky. Differences below the
-# snap threshold are applied directly: a glide nobody can see is just
-# latency.
+# The resize glide between songs; changes up to TWEEN_SNAP_PX apply at once.
 TWEEN_MS = 300
 TWEEN_STEP_MS = 16
 TWEEN_SNAP_PX = 12
 
-# The width put up before the measurement lands, and the fallback if it never
-# does: per-glyph-class advances for the stock NotoSans at font14's 33px,
-# calibrated against the font file (within ~4% on real lines). Ranking probe
-# candidates uses the same numbers, where only the order matters. A single
-# chars-times-constant figure cannot do either job -- it was wrong by -40% on
-# ordinary lines and +10% on wide-glyph ones at the same time.
+# Per-glyph-class advances of NotoSans at font14 (33px), for the width
+# estimate used before, or instead of, a measurement.
 _NARROW = set("iljI!.,'|:;()[]\" ")
 _WIDE = set("MWmw@%&")
 _NARROW_PX = 9
@@ -110,8 +80,8 @@ ACTION_PREVIOUS_MENU = 10
 ACTION_NAV_BACK = 92
 CLOSE_ACTIONS = (ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU, ACTION_NAV_BACK)
 
-# Actions that mean the viewer took the list over. Following stands down until
-# the next song rather than fighting them for the scroll position.
+# Actions that mean the viewer took the list over; following stops until the
+# next song.
 SCROLL_ACTIONS = (3, 4, 5, 6, 104, 105, 111, 112)
 
 
@@ -122,7 +92,7 @@ def estimate_px(line: str) -> int:
         if ch in _NARROW:
             total += _NARROW_PX
         elif ch in _WIDE or ord(ch) >= 0x2E80:
-            # CJK and everything beyond it is full-width or close to it.
+            # CJK and beyond: full-width.
             total += _WIDE_PX
         elif ch.isupper():
             total += _UPPER_PX
@@ -141,28 +111,20 @@ def rows_for(height: int) -> int:
     return max(3, (height - TITLE_STRIP - BOTTOM_PAD) // ROW_HEIGHT)
 
 
-# A list resized at runtime keeps the page it was authored with: scrolling
-# still treats the view as this many rows, so a selected line rides at the
-# bottom of the *authored* page however short the visible list is. Verified
-# live -- at 11 visible rows of a 13-row page the sung line sat two rows
-# below centre, and shorter than that it left the window entirely. Lead
-# arithmetic therefore works in page rows, not visible rows.
 PAGE_ROWS = rows_for(FULL_HEIGHT)
 
 
 class LyricsWindow(xbmcgui.WindowXMLDialog):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        # Taken here rather than through a setter after show(): onInit runs on
-        # Kodi's thread some time after show() returns, so anything written to
-        # the controls before then lands on a window that does not exist yet.
+        # Taken here because onInit, which applies them, runs after show()
+        # returns.
         self._lines: List[str] = list(kwargs.pop("lines", []))
         self._target_height: int = self._clamp_height(
             int(kwargs.pop("height", FULL_HEIGHT))
         )
         super().__init__(*args)
         self.closed = False
-        # Distinguishes the viewer closing the window (stay shut for the
-        # song) from Kodi closing it out from under us (reopen).
+        # Closed by the viewer (stay shut this song), not by Kodi (reopen).
         self.dismissed = False
         self.scrolled = False
         self._list: Optional[xbmcgui.ControlList] = None
@@ -175,32 +137,19 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
 
     def onInit(self) -> None:
         try:
-            # getControl is declared to return the Control base class; LIST_ID
-            # addresses the <control type="list"> in script-kofin-lyrics.xml, and
-            # addItem/reset/selectItem below already depend on that. The cast
-            # states the invariant rather than widening the attribute, so a
-            # future LIST_ID pointing at a non-list fails type-checking here
-            # instead of at the first addItem on a live window.
             self._list = cast(xbmcgui.ControlList, self.getControl(LIST_ID))
         except Exception:  # pragma: no cover - window torn down mid-init
             self._list = None
             return
         self._fill()
-        # The estimate only, applied instantly so it is the width the open
-        # fade plays at: measuring waits on the renderer, and waiting is
-        # exactly what a callback must not do. The service loop's next
-        # refit() glides the few pixels to the measured truth.
+        self.setFocusId(LIST_ID)  # only now: an empty list cannot take focus
+        # The estimate now, so the opening fade plays at about the right
+        # width; refit() measures.
         self._fit(self._estimate_width(self._lines))
 
     def set_lines(self, lines: List[str]) -> None:
-        """Replace the lines in an already-open window, for the next track.
-
-        Measured before anything visible moves: the probe labels are
-        window-level and know nothing of the list, so the outgoing track
-        keeps its panel while the new one is sized. The swap and the resize
-        then land together -- one visible change, glided -- where fitting
-        the estimate first moved the panel twice per track.
-        """
+        """Show the next track's lines, measured first so the swap and the
+        resize land together."""
         self._lines = list(lines)
         if self._list is None or not self._alive():
             return
@@ -214,7 +163,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         else:
             self._measured = True
             width = width_for(measured)
-        if not self._alive():  # measurement took ~a second; re-check
+        if not self._alive():  # measuring takes about a second
             return
         self._fill()
         self._tween_to(width)
@@ -223,15 +172,15 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         """The user's panel height; applied with the next fit."""
         self._target_height = self._clamp_height(height)
 
-    def refit(self) -> None:
-        """Measure the widest line on the live skin font and glide to it.
+    @property
+    def ready(self) -> bool:
+        """Whether onInit has run; a selection made before then is lost."""
+        return self._list is not None
 
-        The service loop calls this every tick; it is a no-op once measured.
-        The measure labels in script-kofin-lyrics.xml have <width>auto</width>,
-        so the renderer sizes them to whatever text PROP_MEASURE holds -- the
-        one true answer for whichever font the active skin resolves, where
-        any estimate from character counts is wrong per skin, per font and
-        per glyph.
+    def refit(self) -> None:
+        """Measure the widest line in the skin's own font and glide to it.
+
+        A no-op once measured.
         """
         if self._list is None or self._measured or not self._alive():
             return
@@ -245,25 +194,20 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         self._tween_to(width_for(measured))
 
     def lead_rows(self) -> int:
-        """How far below the sung line to drag the view; see the presenter.
+        """How far past the sung line to drag the view; see
+        Presenter._position_list."""
+        return paging.lead_rows(rows_for(self._target_height), PAGE_ROWS)
 
-        Selecting ``lead`` ahead leaves the sung line that far above the
-        *authored* page's bottom row -- the page a runtime-resized list
-        still scrolls by -- which lands it mid-way down the rows actually
-        visible at the current height.
-        """
-        visible = rows_for(self._target_height)
-        return max(1, (PAGE_ROWS - 1) - (visible - 1) // 2)
+    def middle_row(self) -> int:
+        """The row the sung line settles on at the current height."""
+        return paging.middle_row(rows_for(self._target_height))
 
     def _fill(self) -> None:
-        """Put the current lines on the list, plus a blank tail.
+        """Fill the list with the lines and lead_rows() blank rows.
 
-        A blank line still occupies a row: lines are addressed by index, so
-        dropping empties would shift every line after one. The lead_rows()
-        blanks after the last line let the final sung lines be dragged up to
-        the visible middle -- the view scrolls no further than its last row,
-        so without them the song's tail could only sit at the bottom of the
-        page, which a shortened window clips off entirely.
+        Empty lines keep their rows, since lines are addressed by index. The
+        blank tail lets the last lines reach the middle row: a list scrolls
+        no further than its last item.
         """
         if self._list is None:
             return
@@ -276,20 +220,11 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
     # -- liveness ------------------------------------------------------------
 
     def _alive(self) -> bool:
-        """Whether the dialog Kodi holds for us still exists.
+        """Whether the dialog is still open.
 
-        Kodi can close this dialog without close() ever running -- observed
-        live, closer unidentified -- and a closed WindowXML frees its control
-        tree while our wrappers keep their pointers. The next write through
-        one segfaulted Kodi (Control::setWidth, 21.3), so nothing here
-        touches a control before asking.
-
-        The id is taken from getCurrentWindowDialogId once, validated by
-        fetching the sentinel label through it -- a foreign dialog raises.
-        While something else is on top the id cannot be learned; the window
-        was shown moments ago, so that counts as alive and discovery retries
-        on the next call. Once known, Window.IsVisible answers from Kodi's
-        side, repeatably, with no wrapper involved.
+        The id is learned once from the topmost dialog and checked against
+        the sentinel. Until then -- something else on top -- it counts as
+        alive.
         """
         if self.closed:
             return False
@@ -317,16 +252,11 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         return min(FULL_HEIGHT, max(MIN_HEIGHT, height))
 
     def _tween_to(self, width: int) -> None:
-        """Glide the panel's left edge to ``width`` over ~300ms.
+        """Glide the panel's left edge to ``width`` over TWEEN_MS.
 
-        Stepped writes from this thread render as real motion (verified at
-        full frame rate on 21.3); there is no GUI-side alternative, because
-        Python cannot trigger skin animations and skin geometry cannot bind
-        a property. The position for each write comes from the elapsed
-        clock, so a sleep stretched by the callback pump lands the next
-        write further along the curve instead of behind it -- late, not
-        wrong. Each step re-checks _alive() so a window closed mid-glide is
-        abandoned, not written to.
+        Stepped writes are the only way to animate it: Python cannot trigger
+        skin animations, and skin geometry cannot bind a property. Steps
+        follow the clock, as xbmc.sleep overruns while it pumps callbacks.
         """
         if self._width == 0 or abs(width - self._width) <= TWEEN_SNAP_PX:
             self._fit(width)
@@ -345,25 +275,14 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         self._fit(width)
 
     def _fit(self, width: int) -> None:
-        """Put the panel at ``width`` and the target height, right-anchored.
+        """Put the panel at ``width`` and the target height.
 
-        Only the panel and the two controls move: the list keeps its authored
-        width because an <itemlayout> cannot be resized at runtime, so the text
-        would stop being centred if it did. Instead the list is shifted so its
-        centre stays on the panel's centre. No text escapes the panel: below
-        the clamp the widest line is PADDING narrower than the panel, and at
-        the clamp anything wider than the item layout's 1200 is clipped (and
-        scrolled) by the label, which sits inside the full-width panel.
-
-        Written unconditionally, including at the full width, because the
-        window is refilled across track changes rather than reopened. At the
-        full size the arithmetic reproduces the authored geometry exactly.
-        The height is top-anchored -- the panel's bottom edge is what moves --
-        and the list shows whole rows only, so the panel keeps the exact
-        pixel height the setting asks for while the rows snap underneath.
+        The list keeps its authored width -- an item layout cannot be resized
+        at runtime -- and moves to stay centred on the panel. It shows whole
+        rows; the panel takes the exact height.
         """
         height = self._target_height
-        left = FULL_WIDTH - width  # right edge stays where it was authored
+        left = FULL_WIDTH - width  # right-anchored
         self._width = width
         try:
             panel = self.getControl(PANEL_ID)
@@ -373,8 +292,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             title.setWidth(width - 2 * LIST_LEFT)
             title.setPosition(left + LIST_LEFT, 10)
             if self._list is not None:
-                # Half the shrink: the list's text centres on its own authored
-                # width, so moving it half way keeps that centre on the panel's.
+                # Half the shrink keeps the list's centre on the panel's.
                 self._list.setPosition(LIST_LEFT + left // 2, TITLE_STRIP)
             if height != self._height:
                 panel.setHeight(height)
@@ -403,12 +321,9 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
                     # Clamped regardless; a wider runner-up changes nothing.
                     break
         except Exception:
-            # Torn down under us mid-probe; the caller falls back.
-            return None
+            return None  # torn down mid-probe
         finally:
             try:
-                # Collapses every unread label to width 1, which is what
-                # makes a premature read detectable -- see _probe.
                 home.clearProperty(PROP_MEASURE)
             except Exception:  # pragma: no cover - teardown race
                 pass
@@ -416,11 +331,9 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
 
     @staticmethod
     def _candidates(lines: List[str]) -> List[str]:
-        """The lines that could plausibly render widest, widest-first.
+        """Up to three lines within 15% of the widest estimate, widest first.
 
-        The estimate can only mis-rank lines whose real widths are close, so
-        probing everything within 15% of the top estimate covers the ranking
-        error, and three probes is plenty.
+        The estimate only mis-ranks lines of close widths.
         """
         unique = sorted(
             {line for line in lines if line.strip()}, key=estimate_px, reverse=True
@@ -431,13 +344,10 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         return [line for line in unique[:3] if estimate_px(line) >= floor]
 
     def _probe(self, home: xbmcgui.Window, line: str) -> Optional[int]:
-        """One measurement through the next virgin label, or None.
+        """Measure ``line`` with the next unread label, or None.
 
-        Exactly one read: reading is what spends the label, so there is no
-        polling -- the renderer gets SETTLE_MS and then the answer is taken.
-        Outside a measurement the property is empty and every unspent label
-        sits at width 1, so a read of 1 means the renderer had not shown
-        this line yet; the id is spent, but the caller retries the round.
+        Unread labels sit at width 1 while the property is empty, so a width
+        of 1 means the renderer had not laid this line out yet.
         """
         if self._next_probe > MEASURE_ID_LAST:
             return None  # pool exhausted; the estimate stands
@@ -468,6 +378,44 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         except Exception:  # window already torn down with the player
             pass
 
+    def close_at_shutdown(self) -> None:
+        """Close the dialog as the service stops, without deadlocking Kodi.
+
+        While Kodi stops a service, its main thread waits for the script, and
+        close() -- which freeing this object also runs while the dialog is
+        visible -- waits for the main thread holding the GIL. At its 5 s timeout Kodi takes the GIL to kill
+        the script, and nothing moves again. So the close is posted, and this
+        sleeps without the GIL until the dialog is gone; the caller must keep
+        this object until then.
+        """
+        self.closed = True
+        if self._window_id is not None:
+            window_ids = [self._window_id]
+        else:
+            window_ids = self._open_window_ids()
+        for window_id in window_ids:
+            xbmc.executebuiltin("Dialog.Close(%d,true)" % window_id)
+        deadline = time.monotonic() + SHUTDOWN_CLOSE_WAIT_S
+        while time.monotonic() < deadline and any(
+            xbmc.getCondVisibility("Window.IsVisible(%d)" % window_id)
+            for window_id in window_ids
+        ):
+            time.sleep(0.05)  # not xbmc.sleep, which pumps callbacks
+
+    @staticmethod
+    def _open_window_ids() -> List[int]:
+        """Every visible window built from this addon's XML."""
+        found: List[int] = []
+        for window_id in range(PYTHON_WINDOW_FIRST, PYTHON_WINDOW_LAST + 1):
+            if not xbmc.getCondVisibility("Window.IsVisible(%d)" % window_id):
+                continue
+            try:
+                xbmcgui.Window(window_id).getControl(SENTINEL_ID)
+            except Exception:
+                continue
+            found.append(window_id)
+        return found
+
     def onAction(self, action: xbmcgui.Action) -> None:
         action_id = action.getId()
         if action_id in CLOSE_ACTIONS:
@@ -475,3 +423,17 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             self.close()
         elif action_id in SCROLL_ACTIONS:
             self.scrolled = True
+            self._stop_at_last_line()
+
+    def _stop_at_last_line(self) -> None:
+        """Bring a list scrolled by hand back from the blank rows after the
+        last line with text, which are there only for following (see _fill)."""
+        if self._list is None or not self._alive():
+            return
+        last = max((i for i, line in enumerate(self._lines) if line.strip()), default=0)
+        if self._list.getSelectedPosition() <= last:
+            return
+        # An item above the view lands on the top row (see
+        # Presenter._position_list), leaving the last line on the bottom row.
+        self._list.selectItem(max(0, last - (rows_for(self._target_height) - 1)))
+        self._list.selectItem(last)

@@ -1,17 +1,9 @@
-"""Deciding where lyrics get drawn, and keeping them on the beat.
+"""Where lyrics are drawn, and keeping the sung line in view.
 
-Two ways to show the same lines:
-
-* A skin that draws lyrics itself declares the list control it wants driven
-  (``kofin.lyric.control``). We fill nothing and only move the highlight,
-  because the skin's control belongs to the window that is already active --
-  it takes no input and blocks nothing.
-* Any other skin gets this addon's own window, the way CU LRC Lyrics works.
-  That window *is* the active window while it is up, so it is opened only over
-  the visualisation screen, where there is nothing else to navigate.
-
-Following stands down the moment the viewer scrolls for themselves, and the
-next song takes it back.
+A skin that draws lyrics itself names its list in ``kofin.lyric.control``;
+only that list's selection is driven. Any other skin gets this addon's own
+window, which becomes the active window, so it is only opened over the
+visualisation screen.
 """
 
 from typing import Callable, List, Optional
@@ -21,7 +13,7 @@ import xbmcaddon
 import xbmcgui
 
 from kofinlyrics import lyrics as source
-from kofinlyrics import settings
+from kofinlyrics import paging, settings
 from kofinlyrics.window import (
     FULL_HEIGHT,
     XML_FILENAME,
@@ -33,47 +25,28 @@ from kofinlyrics.window import (
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
 
-# The visualisation window. The addon's own window is only ever shown here.
 WINDOW_VISUALISATION = 12006
 
-# The skin overlay's vertical framing, part of the driving contract a skin
-# opts into by publishing kofin.lyric.panel: 60px rows with 20px of combined
-# inset above and below the list, authored at the full height. The height
-# itself is the user's setting, shared with this addon's own window.
+# What a skin publishing kofin.lyric.panel authors: 60px rows, in a list 20px
+# shorter than its panel, at FULL_HEIGHT.
 SKIN_ROW_HEIGHT = 60
 SKIN_VERTICAL_INSET = 20
-# The page the skin's list was authored with. A list resized at runtime
-# keeps scrolling by its authored page (verified live -- see
-# LyricsWindow.lead_rows), so the overlay's lead works in these rows however
-# short the visible list is.
 SKIN_PAGE_ROWS = (FULL_HEIGHT - SKIN_VERTICAL_INSET) // SKIN_ROW_HEIGHT
 
-# The overlay widths skin.contuary authors, narrowest first (Includes_Lyrics.xml).
-# A skin cannot bind a width, so the token is the smallest of those panels the
-# line fits in. Anything wider than the medium panel is "wide".
+# The overlay widths Contuary authors (Includes_Lyrics.xml).
 PANEL_NARROW = 520
 PANEL_MID = 760
 PANEL_MEDIUM = 1000
 
 
 def log(message: str) -> None:
-    """Chatty at INFO only when asked; otherwise it stays in the debug log.
-
-    This runs once per song and once per hand-over, which is more than a
-    normal log wants from an addon that is working.
-    """
-    try:
-        level = xbmc.LOGINFO if settings.debug() else xbmc.LOGDEBUG
-    except Exception:  # never let logging be the thing that fails
-        level = xbmc.LOGDEBUG
-    xbmc.log("[kofin-lyrics] %s" % message, level)
+    xbmc.log("[kofin-lyrics] %s" % message, xbmc.LOGDEBUG)
 
 
 def _skin_list_position(control: int) -> int:
-    """Which line a skin's list is on, or -1 if it cannot be read.
+    """The skin list's selected index, or -1 if it cannot be read.
 
-    CurrentItem, not Position: on a fixedlist Position is the pinned cursor
-    row and never moves. And it counts from one.
+    CurrentItem counts from one; Position is the cursor's row, not the line.
     """
     try:
         return int(xbmc.getInfoLabel("Container(%d).CurrentItem" % control)) - 1
@@ -81,15 +54,16 @@ def _skin_list_position(control: int) -> int:
         return -1
 
 
-def _skin_list_length(control: int) -> int:
-    """How many rows the skin's list really holds, or 0 if unreadable.
+def _skin_select(control: int, index: int) -> None:
+    """Select ``index`` in a skin's list.
 
-    Read from the container rather than counted from the published lines:
-    kofin pads its lyrics directory with a blank tail so the last sung lines
-    can be dragged up to the visible middle, and the pad is part of what the
-    drag has to work against. An unpadded, older kofin just reads shorter,
-    and the drag clamps to what exists.
+    Without ``absolute`` the index would count from the top of the view.
     """
+    xbmc.executebuiltin("Control.SetFocus(%d,%d,absolute)" % (control, index))
+
+
+def _skin_list_length(control: int) -> int:
+    """Rows in the skin's list, including kofin's blank tail; 0 if unreadable."""
     try:
         return int(xbmc.getInfoLabel("Container(%d).NumItems" % control))
     except (TypeError, ValueError):
@@ -116,26 +90,29 @@ def _skin_rows(height: int) -> int:
 class Presenter:
     """Owns whichever surface is showing the current song's lyrics."""
 
-    def __init__(self) -> None:
+    def __init__(self, monitor: xbmc.Monitor) -> None:
+        # The service's own: abortRequested() is only set on monitors that
+        # existed when Kodi asked.
+        self._monitor = monitor
         self._lines: List[source.LyricLine] = []
         self._window: Optional[LyricsWindow] = None
         self._sent: Optional[int] = None
         self._following = False
-        # Our own window has taken over from a skin's overlay for scrolling.
+        # Our window has taken over from the skin's overlay for scrolling.
         self._interactive = False
-        # The skin overlay needs its geometry (re)applied: at each new song,
-        # and whenever its window reloaded -- a reload rebuilds the controls
-        # at their authored size, which silently discards anything set.
+        # The skin overlay's geometry needs (re)applying; a window reload
+        # resets it to the authored size.
         self._skin_stale = True
+        # Rows the skin's overlay currently shows.
+        self._skin_visible = SKIN_PAGE_ROWS
 
     # -- lifecycle ----------------------------------------------------------
 
     def start_song(self) -> None:
-        """Take up whatever kofin has published for the song now playing.
+        """Take up what kofin has published for the playing song.
 
-        An open window is refilled rather than closed and reopened: it is the
-        same panel showing the next track, and tearing it down between songs
-        made it flash out and back on every change.
+        An open window is refilled, not reopened, so it does not flash
+        between songs.
         """
         lines = source.published_lines()
         if not lines:
@@ -154,6 +131,8 @@ class Presenter:
         if self._window is not None and not self._window.closed:
             self._window.set_target_height(settings.window_height())
             self._window.set_lines([text for _, text in lines])
+        if not timed:
+            self._rewind_skin_list()
         source.set_show(True)
         log("%d lines%s" % (len(lines), "" if timed else " (untimed)"))
 
@@ -161,25 +140,21 @@ class Presenter:
         source.set_show(False)
         source.set_size(None)
         self._leave_interactive()
+        self._rewind_skin_list()
         self._close_window()
         self._lines = []
         self._sent = None
         self._following = False
 
     def summon(self) -> None:
-        """Hand the lyrics to the viewer to scroll.
+        """Hand the lyrics to our own window for scrolling by hand.
 
-        A skin's overlay cannot take the arrow keys however it is focused:
-        Kodi's keymap binds them to StepBack/SkipNext for the whole
-        visualisation window, so they never reach a control. Only a window of
-        our own gets ordinary navigation -- so that is what scrolling means
-        here, with the skin's overlay standing aside while it is up.
+        A skin's overlay never gets the arrow keys: the visualisation
+        window's keymap binds them to StepBack/SkipNext.
         """
         if not self._lines:
-            # Nothing taken up yet -- showAutomatically is off, or the viewer
-            # dismissed the window earlier in this song. Take them up now and
-            # carry straight on into the hand-over: one press, lyrics you can
-            # scroll.
+            # Not taken up yet: showAutomatically is off, or the window was
+            # dismissed earlier in this song.
             self.start_song()
             if not self._lines:
                 return
@@ -195,12 +170,21 @@ class Presenter:
             self._lines = source.published_lines()
 
     def close(self) -> None:
-        self.stop_song()
+        """Let everything go as the service ends.
+
+        The window goes last, by LyricsWindow.close_at_shutdown, so the skin's
+        properties are cleared even if Kodi kills the script during its wait.
+        """
+        window, self._window = self._window, None
+        try:
+            self.stop_song()
+        finally:
+            if window is not None:
+                window.close_at_shutdown()
 
     # -- the tick -----------------------------------------------------------
 
     def tick(self, position: Optional[float]) -> None:
-        """Called on the service's cadence while a song plays."""
         if not self._lines:
             return
 
@@ -209,16 +193,18 @@ class Presenter:
         )
         control = 0 if self._interactive else source.skin_control_id()
 
+        if not (control and visualisation):
+            # A skin reload while the overlay is away resets its geometry.
+            self._skin_stale = True
+
         if control:
-            # The skin draws. Our own window must not also be up -- that is the
-            # double-render that makes two lyrics addons unusable together.
+            # The skin draws; our window must not also be up.
             self._close_window()
             if visualisation:
                 self._drive_skin(control, position)
             return
 
         if not visualisation:
-            # Nowhere safe to put a window of our own.
             self._close_window()
             return
         self._drive_window(position)
@@ -226,35 +212,34 @@ class Presenter:
     # -- driving a skin's list ----------------------------------------------
 
     def _drive_skin(self, control: int, position: Optional[float]) -> None:
-        """Keep a skin's list on the line being sung.
+        """Keep a skin's list on the sung line.
 
-        Nothing here watches for the viewer scrolling, because in a skin's
-        list they cannot: Kodi's keymap spends the arrow keys on
-        StepBack/SkipNext for the whole visualisation window, so they never
-        reach the control. Scrolling by hand is what the interactive window is
-        for.
-
-        That makes any divergence ours to correct rather than theirs to keep,
-        so this re-asserts instead of standing down. Three separate bugs came
-        from the older reading -- the OSD, a hidden overlay and an unloaded
-        list each moved the position somewhere we had not put it, and each
-        looked exactly like a manual scroll.
+        Re-asserted every tick: the viewer cannot scroll the list, so any
+        divergence is ours to correct.
         """
         where = _skin_list_position(control)
         if where < 0:
-            # Not addressable. Container(...) resolves against the active
-            # window, so while the OSD is up the list cannot be read -- and
-            # must not be written either: Control.SetFocus acts on the active
-            # window too, so driving here fires it into the OSD every tick and
-            # takes the focus off whatever the viewer is using.
-            #
-            # It also cannot be *seen*: whatever geometry we pushed may be
-            # gone by the time it is back, so it is pushed again then.
+            # Unaddressable, e.g. under the OSD, where Control.SetFocus would
+            # land instead. Its geometry is pushed again when it is back.
             self._skin_stale = True
             return
-        if self._skin_stale and self._apply_skin_geometry(control):
+        resized = False
+        if self._skin_stale:
+            applied = self._apply_skin_geometry(control)
+            if applied is None:
+                return  # mid-reload; pushed again next tick
             self._skin_stale = False
+            resized = applied
         if not self._following:
+            # Untimed: hold the first line (see _rewind_skin_list). No resize
+            # wait: the first line tops the view on any page.
+            if where != 0:
+                _skin_select(control, 0)
+            return
+        if resized:
+            # Place from the next tick: a selection handled before Kodi's
+            # next frame would use the old page.
+            self._sent = None
             return
         active = self._active(position)
         if active is None:
@@ -262,52 +247,62 @@ class Presenter:
         if active == self._sent and where == active:
             return
         self._sent = active
-        visible = _skin_rows(settings.window_height())
         self._position_list(
-            lambda index: xbmc.executebuiltin(
-                # absolute: without it the position is taken relative to the
-                # visible page, which lands on a different line every time the
-                # list scrolls.
-                "Control.SetFocus(%d,%d,absolute)"
-                % (control, index)
-            ),
+            lambda index: _skin_select(control, index),
             active,
-            max(1, (SKIN_PAGE_ROWS - 1) - (visible - 1) // 2),
+            paging.middle_row(self._skin_visible),
+            paging.lead_rows(self._skin_visible, SKIN_PAGE_ROWS),
             (_skin_list_length(control) or len(self._lines)) - 1,
         )
 
-    def _apply_skin_geometry(self, control: int) -> bool:
-        """Push the user's height onto the skin's overlay, if it opted in.
+    def _apply_skin_geometry(self, control: int) -> Optional[bool]:
+        """Write the height setting onto a skin overlay that opted in.
 
-        Skin XML cannot read geometry from a property, so exact pixel heights
-        have to be written onto the skin's controls from here. A skin opts in
-        by publishing its backdrop ids as kofin.lyric.panel; without them
-        nothing is touched, and at the full height there is nothing to say.
+        The full height is written too, restoring a list shortened earlier.
+        Returns whether the list's height changed, or None mid-reload.
 
-        One Window wrapper per application, not per tick: constructing
-        wrappers on a live window at polling rate has crashed Kodi.
+        Call once per application, not per tick: wrappers built at polling
+        rate crash Kodi. A fresh wrapper is also what reads the live height;
+        a control wrapper keeps the geometry it was created with.
         """
-        height = settings.window_height()
         panel_ids = source.skin_panel_ids()
-        if not panel_ids or height >= FULL_HEIGHT:
-            return True
+        if not panel_ids:
+            self._skin_visible = SKIN_PAGE_ROWS
+            return False
+        height = min(FULL_HEIGHT, settings.window_height())
+        rows = _skin_rows(height)
         try:
             visualisation = xbmcgui.Window(WINDOW_VISUALISATION)
             for panel_id in panel_ids:
                 visualisation.getControl(panel_id).setHeight(height)
-            visualisation.getControl(control).setHeight(
-                _skin_rows(height) * SKIN_ROW_HEIGHT
-            )
-            log("skin overlay height set to %d" % height)
-            return True
+            skin_list = visualisation.getControl(control)
+            resized = skin_list.getHeight() != rows * SKIN_ROW_HEIGHT
+            skin_list.setHeight(rows * SKIN_ROW_HEIGHT)
         except Exception:
-            # Mid-reload; stays stale and is pushed again next tick.
-            return False
+            return None
+        self._skin_visible = rows
+        if resized:
+            log("skin overlay height set to %d" % height)
+        return resized
+
+    def _rewind_skin_list(self) -> None:
+        """Put the skin's list back on its first line, if it is addressable.
+
+        The list outlives the song and Kodi keeps its selection when the rows
+        change, so without this a song opens where the last one ended.
+        """
+        control = 0 if self._interactive else source.skin_control_id()
+        if control and _skin_list_position(control) > 0:
+            _skin_select(control, 0)
 
     # -- driving our own window ---------------------------------------------
 
     def _drive_window(self, position: Optional[float]) -> None:
         if self._window is None:
+            if self._monitor.abortRequested():
+                # show() would block like close(); see
+                # LyricsWindow.close_at_shutdown.
+                return
             self._open_window()
         if self._window is None:
             return
@@ -315,25 +310,22 @@ class Presenter:
             window = self._window
             self._window = None
             if not window.dismissed:
-                # Kodi closed it out from under us -- observed live, closer
-                # unidentified. Not the viewer's doing, so reopen with the
-                # same song rather than standing down.
+                # Closed by Kodi, not the viewer: reopen.
                 self._sent = None
                 log("window closed out from under us; reopening")
             elif self._interactive:
-                # Handed back: the skin's overlay draws again, following the
-                # music once more.
+                # Handed back to the skin's overlay.
                 self._leave_interactive()
                 self._following = source.is_timed(self._lines)
                 self._sent = None
             else:
                 self._lines = []  # dismissed; leave it shut for this song
             return
-        # Fitting the panel to the measured lines happens out here rather
-        # than in the window's own onInit: measuring pumps callbacks, and a
-        # callback is no place to pump from. A no-op once it has landed.
         self._window.refit()
         if not self._following or self._window.scrolled:
+            return
+        if not self._window.ready:
+            # Just opened: a selection now would be lost but counted as sent.
             return
         active = self._active(position)
         if active is None or active == self._sent:
@@ -341,9 +333,13 @@ class Presenter:
         self._sent = active
         window = self._window
         lead = window.lead_rows()
-        # The window's list carries lead_rows() of blank tail, so the drag
-        # target exists right up to the last line.
-        self._position_list(window.highlight, active, lead, len(self._lines) - 1 + lead)
+        self._position_list(
+            window.highlight,
+            active,
+            window.middle_row(),
+            lead,
+            len(self._lines) - 1 + lead,  # the list ends in ``lead`` blank rows
+        )
 
     def _open_window(self) -> None:
         try:
@@ -376,34 +372,24 @@ class Presenter:
 
     @staticmethod
     def _position_list(
-        select: Callable[[int], None], active: int, lead: int, last: int
+        select: Callable[[int], None], active: int, mid: int, lead: int, last: int
     ) -> None:
-        """Put ``active`` on the list, sitting mid-view once it gets there.
+        """Select ``active`` so that, once scrolling, it sits on row ``mid``.
 
-        A list only scrolls when the cursor reaches the edge of its page, so
-        selecting the sung line alone walks the cursor from the top down to
-        the page's *bottom* row and scrolls from there -- and the page is the
-        one the list was authored with, however short it has been resized,
-        so the bottom row may not even be on screen.
-
-        Selecting a line ``lead`` further on first drags the view down so
-        that line sits at the page bottom, which leaves the sung line
-        ``lead`` rows above it -- the middle of the rows actually visible,
-        by the lead the caller chose; putting the cursor back on it then
-        moves no view, because it is already showing. Early in a track
-        neither selection scrolls anything, so the cursor simply walks down
-        from the top. ``last`` caps the drag at the list's real end.
+        A list scrolls only when the selection leaves its page: a line
+        selected before the page lands on the top row, one after it on the
+        bottom row. So select ``mid`` lines back (tops the view after a seek
+        backwards), then ``lead`` lines on (drags the view down until the
+        sung line is ``mid`` rows down), then the sung line, which only moves
+        the cursor. Played forwards, that is one one-row scroll per line.
+        ``last`` caps the drag at the list's end.
         """
+        select(max(0, active - mid))
         select(min(active + lead, last))
         select(active)
 
     def _active(self, position: Optional[float]) -> Optional[int]:
-        """Which line to sit on, or None when there is nothing to follow.
-
-        Before the first stamped line there is no line playing, but leaving
-        the list unselected shows a panel with nothing picked out at all. The
-        first line is the one about to be sung, so it waits there.
-        """
+        """The line to sit on, or None. Before any line is sung, the first."""
         if position is None:
             return None
         active = source.active_index(self._lines, position - settings.offset())

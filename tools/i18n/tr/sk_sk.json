@@ -1,0 +1,12 @@
+{
+  "Addon Summary": "Texty piesní z vášho servera Jellyfin",
+  "Addon Description": "Zobrazuje texty piesní zo servera Jellyfin, buď v okne, ktoré vykresľuje tento doplnok, alebo ich odovzdá vzhľadu.",
+  "#30001": "Zobrazovať texty automaticky",
+  "#30002": "Zobrazí text na začiatku každej piesne, nielen po stlačení tlačidla textov. Niektoré vzhľady to ignorujú.",
+  "#30003": "Zobrazovať nesynchronizované texty",
+  "#30004": "Nesynchronizované texty stoja na mieste namiesto toho, aby sledovali pieseň. Niektoré vzhľady to ignorujú.",
+  "#30005": "Časový posun (sekundy)",
+  "#30006": "Zvýšte ho, ak riadky prichádzajú príliš skoro, a znížte, ak príliš neskoro.",
+  "#30009": "Výška okna s textami (pixely)",
+  "#30010": "Od horného okraja obrazovky. 480 nezakrýva informácie o prehrávaní; 800 je plná výška."
+}

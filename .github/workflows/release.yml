@@ -1,6 +1,5 @@
-# Tag release: quality gate, build the install zip, draft a GitHub release
-# whose body is the top paragraph of changelog.txt. Mirrors
-# plugin.video.kofin release.yml (single zip — this addon is pure Python).
+# On a v* tag: quality gates, the install zip, and a draft release whose body
+# is the top paragraph of changelog.txt.
 name: Release
 
 on:
@@ -13,8 +12,7 @@ on:
         type: boolean
         default: false
 
-# Least privilege by default: check/package only read. The release job alone
-# needs write to create the draft.
+# Only the release job writes.
 permissions:
   contents: read
 
@@ -42,10 +40,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          # setup-python builds its cache key from requirements.txt or
-          # pyproject.toml by default and errors when it finds neither. This repo
-          # has requirements-dev.txt, so it has to be named. (kofin and
-          # music.restore pass without this only because they carry a pyproject.toml.)
           cache-dependency-path: requirements-dev.txt
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
@@ -83,11 +77,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # kofin hard-imports this addon at a pinned version, and Kodi will not
-          # install kofin at all if the repository cannot satisfy that import.
-          # A version bump here therefore has to be paired with a bump of the
-          # <import> in plugin.video.kofin/addon.xml — this step is the reminder,
-          # not a blocker, because the two releases cannot land atomically.
+          # Kodi will not install kofin if its <import> of this addon cannot be
+          # met. A reminder, not a check: the two releases cannot land together.
           version="$(python3 -c "
           import xml.etree.ElementTree as ET
           print(ET.parse('addon.xml').getroot().get('version'))
@@ -107,7 +98,7 @@ jobs:
     needs: package
     runs-on: ubuntu-24.04
     permissions:
-      contents: write # draft GitHub release + asset upload
+      contents: write
     if: |
       startsWith(github.ref, 'refs/tags/v') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true')
@@ -135,7 +126,7 @@ jobs:
           else
             echo "tag=v$version" >> "$GITHUB_OUTPUT"
           fi
-          # First blank-line-delimited paragraph — same rule as plugin.video.kofin.
+          # The first blank-line-delimited paragraph.
           changes="$(awk -v RS= 'NR==1' changelog.txt)"
           EOF="$(dd if=/dev/urandom bs=15 count=1 status=none | base64)"
           {

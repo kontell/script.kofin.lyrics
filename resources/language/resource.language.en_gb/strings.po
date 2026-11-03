@@ -7,8 +7,15 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: en_GB\n"
 
-msgctxt "#30000"
-msgid "General"
+# Kodi shows the add-on's summary and description from addon.xml; these copies
+# are what gets translated. Keep them in step with its en_GB text.
+
+msgctxt "Addon Summary"
+msgid "Song lyrics from your Jellyfin server"
+msgstr ""
+
+msgctxt "Addon Description"
+msgid "Shows lyrics from a Jellyfin server, either in a window drawn by this add-on or handed to a skin."
 msgstr ""
 
 msgctxt "#30001"
@@ -16,7 +23,7 @@ msgid "Show lyrics automatically"
 msgstr ""
 
 msgctxt "#30002"
-msgid "Bring lyrics up on their own as each song starts. Turn this off to show them only when you press the lyrics button on the music OSD.[CR][CR]Skin dependent: when the skin draws the lyrics itself it has to honour this setting. Confirmed with Contuary; other skins may ignore it and show them anyway. This addon's own window always obeys it."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
 msgstr ""
 
 msgctxt "#30003"
@@ -24,7 +31,7 @@ msgid "Show lyrics that have no timings"
 msgstr ""
 
 msgctxt "#30004"
-msgid "Some songs on the server have lyrics but no timings. They cannot follow the music, so they are shown as a block that does not move. Turn this off to show nothing for those songs instead.[CR][CR]Skin dependent: when the skin draws the lyrics itself it has to honour this setting. Confirmed with Contuary; other skins may ignore it and show them anyway. This addon's own window always obeys it."
+msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
 msgstr ""
 
 msgctxt "#30005"
@@ -32,15 +39,7 @@ msgid "Timing offset (seconds)"
 msgstr ""
 
 msgctxt "#30006"
-msgid "Shift the lyrics in time against the music. Increase this if the lines arrive too early, decrease it if they arrive too late."
-msgstr ""
-
-msgctxt "#30007"
-msgid "Enable debug logging"
-msgstr ""
-
-msgctxt "#30008"
-msgid "Write what this addon is doing to the Kodi log. Leave this off unless you are chasing a problem."
+msgid "Raise it if lines come too early, lower it if they come too late."
 msgstr ""
 
 msgctxt "#30009"
@@ -48,5 +47,5 @@ msgid "Lyrics window height (pixels)"
 msgstr ""
 
 msgctxt "#30010"
-msgid "Height of the lyrics window in pixels, anchored to the top of the screen. The default 480 stays clear of the now-playing info; 800 fills the side of the screen."
+msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr ""

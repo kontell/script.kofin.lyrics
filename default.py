@@ -1,9 +1,4 @@
-"""Script entry point -- what a skin's lyrics button runs.
-
-The service already shows lyrics on its own, so this exists to bring them to
-the front on demand: it focuses the skin's list when a skin is drawing, and
-otherwise asks the service to (re)open this addon's window.
-"""
+"""Script entry point: what a skin's lyrics button runs."""
 
 import os
 import sys

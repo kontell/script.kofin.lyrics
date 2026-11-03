@@ -1,4 +1,4 @@
-"""Service entry point: watch playback, keep the lyrics on the beat."""
+"""Service entry point."""
 
 import os
 import sys

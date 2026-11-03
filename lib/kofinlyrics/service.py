@@ -1,12 +1,7 @@
-"""The service loop: follow playback and keep the presenter fed.
+"""The service loop: follow playback and feed the presenter.
 
-Kofin publishes a song's lyrics at playback start -- it holds the Jellyfin
-session and gets there before anything else can. This addon waits for that
-publication and decides where to draw it.
-
-The cadence is Kodi-aware (``waitForAbort``, not ``Event.wait``): while this
-addon's own window is up, the loop has to yield to Kodi between ticks or the
-window's callbacks are never delivered.
+It waits in waitForAbort, which is also what delivers the lyrics window's
+callbacks.
 """
 
 from typing import Optional
@@ -21,11 +16,7 @@ from kofinlyrics.summon import PROP_SUMMON
 
 TICK_SECONDS = 0.25
 
-# Kofin clears the published lyrics before it publishes the next song's, so
-# there is always a moment mid-track-change with nothing there. Tearing down on
-# the first empty tick closed the window between every pair of songs. Wait a
-# few ticks before believing it: a song genuinely without lyrics only costs
-# this long showing the previous one's.
+# Kofin clears its lyrics between songs, so a few empty ticks are expected.
 EMPTY_TICKS_BEFORE_STOP = 12
 
 
@@ -46,10 +37,7 @@ def _take_summons() -> bool:
 
 
 def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
-    # The published path carries the song id, so it is what tells one song's
-    # lyrics from the next. A flag would not: kofin clears and republishes
-    # within a single tick on a track change, so "has lyrics" never goes false
-    # in between and stale lines would sit there for the whole next song.
+    # The published path carries the song id, so it changes with every song.
     showing = ""
     empty_ticks = 0
 
@@ -70,14 +58,9 @@ def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
                     showing = ""
             elif published != showing:
                 empty_ticks = 0
-                # A song we have not taken up yet, or a new one. With
-                # showAutomatically off nothing is taken up until the lyrics
-                # button asks for it -- but the song still has to be noticed,
-                # or the previous one's lines would linger.
+                # A new song. When it is not shown automatically, the last
+                # song's lyrics still have to go.
                 if settings.show_automatically():
-                    # start_song refills an open window rather than closing
-                    # it, so the panel carries across the track change instead
-                    # of flashing out and back.
                     presenter.start_song()
                 else:
                     presenter.stop_song()
@@ -96,16 +79,14 @@ def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
 
 def run() -> None:
     monitor = xbmc.Monitor()
-    presenter = Presenter()
+    presenter = Presenter(monitor)
     log("service started")
     try:
         _loop(monitor, presenter)
     except Exception as error:  # pragma: no cover - defensive
         log("service loop failed: %s" % error)
     finally:
-        # Whatever happened above, the window has to go. One left registered
-        # pins the whole UI to it until Kodi is restarted -- which is what
-        # made a settings read throwing during teardown so expensive.
+        # The window has to go: one left open pins Kodi's UI to it.
         try:
             presenter.close()
         except Exception:

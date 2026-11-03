@@ -1,5 +1,4 @@
-# Quality gates + PR install zip. Shape mirrors plugin.video.kofin ci.yml:
-# this file is the every-PR gate; release.yml handles tags.
+# Quality gates and an install zip for every push to main and every PR.
 name: CI
 
 on:
@@ -23,10 +22,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          # setup-python builds its cache key from requirements.txt or
-          # pyproject.toml by default and errors when it finds neither. This repo
-          # has requirements-dev.txt, so it has to be named. (kofin and
-          # music.restore pass without this only because they carry a pyproject.toml.)
+          # The default cache key needs requirements.txt or pyproject.toml.
           cache-dependency-path: requirements-dev.txt
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
@@ -42,10 +38,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          # setup-python builds its cache key from requirements.txt or
-          # pyproject.toml by default and errors when it finds neither. This repo
-          # has requirements-dev.txt, so it has to be named. (kofin and
-          # music.restore pass without this only because they carry a pyproject.toml.)
           cache-dependency-path: requirements-dev.txt
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
@@ -61,11 +53,22 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: compileall
-        # There is no unit suite: every module here talks to a live Kodi
-        # (window controls, InfoLabels, the player clock). mypy carries most of
-        # the weight; this is the syntax floor for the two entry points mypy's
-        # `files` list does not reach through.
         run: python -m compileall -q default.py service.py lib/ tools/
+
+  translations:
+    name: translations
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: gen.py --check
+        run: python3 tools/i18n/gen.py --check
+      - name: validate.py
+        run: python3 tools/i18n/validate.py
+      - name: pocheck.py
+        run: python3 tools/i18n/pocheck.py
 
   package:
     name: package
