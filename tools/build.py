@@ -29,8 +29,7 @@ def addon_meta():
 def check_news():
     """addon.xml's <news> must be changelog.txt's first paragraph.
 
-    Kodi shows the one and the repo-scripts pull request quotes it; the other
-    is what the GitHub release is written from.
+    Kodi shows the one; the other is what the GitHub release is written from.
     """
     news = ET.parse(ROOT / "addon.xml").getroot().find(".//news")
     changelog = (ROOT / "changelog.txt").read_text(encoding="utf-8")

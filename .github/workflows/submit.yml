@@ -1,11 +1,12 @@
-# Submits a release to the official Kodi repository: one commit,
-# "[script.kofin.lyrics] <version>", pushed to the kontell/repo-scripts fork
-# and opened as a pull request against xbmc/repo-scripts:piers. Run by hand
+# Prepares a release for the official Kodi repository: one commit,
+# "[script.kofin.lyrics] <version>", pushed to the script.kofin.lyrics@piers
+# branch of the kontell/repo-scripts fork. The pull request against
+# xbmc/repo-scripts:piers is opened from that branch by hand. Run by hand
 # (Actions -> Submit to Kodi -> Run workflow) with the release's tag.
 #
 # Needs two repository secrets: GH_TOKEN, a classic token with public_repo
-# scope, which pushes to the fork and opens the pull request; and EMAIL, the
-# address the submission commit is authored with.
+# scope, which updates the fork; and EMAIL, the address the submission commit
+# is authored with.
 name: Submit to Kodi
 
 on:
@@ -18,6 +19,14 @@ on:
 
 permissions:
   contents: read
+
+# Runs share the fork's branch, which each one force-pushes.
+concurrency: submit-to-kodi
+
+env:
+  ADDON_ID: script.kofin.lyrics
+  KODI_REPO: repo-scripts
+  KODI_BRANCH: piers
 
 jobs:
   submit:
@@ -37,7 +46,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.tag }}
-          # The submitter runs third-party code in this workspace.
           persist-credentials: false
 
       - name: Use the current export-ignore list for an older tag
@@ -69,15 +77,27 @@ jobs:
             exit 1
           fi
 
-      - name: Open the pull request
-        uses: xbmc/action-kodi-addon-submitter@1b063d1bd4ad94e293f41b6d2951022c134c25ea # v1.3
-        with:
-          # The action's descriptions of these two inputs are swapped; the
-          # values are right.
-          kodi-repository: repo-scripts
-          kodi-version: piers
-          addon-id: script.kofin.lyrics
+      - name: Commit it to the fork
+        # bash with pipefail: a failed git archive must not push.
+        shell: bash
         env:
-          GH_USERNAME: ${{ github.actor }}
+          TAG: ${{ inputs.tag }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           EMAIL: ${{ secrets.EMAIL }}
+          GH_USERNAME: ${{ github.actor }}
+        run: |
+          fork="$GH_USERNAME/$KODI_REPO"
+          branch="$ADDON_ID@$KODI_BRANCH"
+          # The fork's piers must hold upstream's tip: a commit made on a
+          # shallow clone pushes only onto history the fork already has.
+          gh repo sync "$fork" --branch "$KODI_BRANCH"
+          git clone -q --depth 1 --branch "$KODI_BRANCH" \
+            "https://x-access-token:$GH_TOKEN@github.com/$fork.git" "$RUNNER_TEMP/fork"
+          cd "$RUNNER_TEMP/fork"
+          git checkout -q -b "$branch"
+          git rm -rq --ignore-unmatch "$ADDON_ID"
+          git -C "$GITHUB_WORKSPACE" archive --prefix "$ADDON_ID/" HEAD | tar -x
+          git add "$ADDON_ID"
+          git -c user.name="$GH_USERNAME" -c user.email="$EMAIL" \
+            commit -q -m "[$ADDON_ID] ${TAG#v}"
+          git push -q -f origin "$branch"
