@@ -81,8 +81,13 @@ ACTION_NAV_BACK = 92
 CLOSE_ACTIONS = (ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU, ACTION_NAV_BACK)
 
 # Actions that mean the viewer took the list over; following stops until the
-# next song.
-SCROLL_ACTIONS = (3, 4, 5, 6, 104, 105, 111, 112)
+# next song: Up, Down, PageUp, PageDown, the mouse wheel, ScrollUp/ScrollDown
+# and Home/End (FirstPage/LastPage).
+SCROLL_ACTIONS = (3, 4, 5, 6, 104, 105, 111, 112, 159, 160)
+# A touch swipe scrolls the list under the finger; it is corrected once the
+# gesture ends, not while it moves.
+ACTION_GESTURE_PAN = 504
+GESTURE_DONE_ACTIONS = (599, 505)  # ACTION_GESTURE_END, ACTION_GESTURE_ABORT
 
 
 def estimate_px(line: str) -> int:
@@ -423,6 +428,10 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
             self.close()
         elif action_id in SCROLL_ACTIONS:
             self.scrolled = True
+            self._stop_at_last_line()
+        elif action_id == ACTION_GESTURE_PAN:
+            self.scrolled = True
+        elif action_id in GESTURE_DONE_ACTIONS and self.scrolled:
             self._stop_at_last_line()
 
     def _stop_at_last_line(self) -> None:
