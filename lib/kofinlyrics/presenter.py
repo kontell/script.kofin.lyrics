@@ -146,6 +146,21 @@ class Presenter:
         self._sent = None
         self._following = False
 
+    def blank_song(self) -> None:
+        """Take the last song's lines down for a new song that nothing has
+        been published for, yet or at all.
+
+        The window stays up, empty, for the grace the service gives kofin's
+        fetch: lines that arrive refill it in place, and none closes it by
+        stop_song. A skin's list is kofin's directory, which kofin has
+        already cleared.
+        """
+        self._lines = []
+        self._sent = None
+        self._following = False
+        if self._window is not None and not self._window.closed:
+            self._window.clear_lines()
+
     def summon(self) -> None:
         """Hand the lyrics to our own window for scrolling by hand.
 

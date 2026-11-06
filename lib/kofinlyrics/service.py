@@ -20,9 +20,17 @@ TICK_SECONDS = 0.25
 EMPTY_TICKS_BEFORE_STOP = 12
 
 
-def _position() -> Optional[float]:
+def _playing_file(player: xbmc.Player) -> str:
+    """What is playing; it changes with every song, published or not."""
     try:
-        return float(xbmc.Player().getTime())
+        return player.getPlayingFile()
+    except RuntimeError:
+        return ""  # playback ended under us
+
+
+def _position(player: xbmc.Player) -> Optional[float]:
+    try:
+        return float(player.getTime())
     except (RuntimeError, ValueError):
         return None  # not playing, or playback ended under us
 
@@ -39,24 +47,37 @@ def _take_summons() -> bool:
 def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
     # The published path carries the song id, so it changes with every song.
     showing = ""
+    # The file that was playing when it was taken up.
+    shown_file = ""
+    # The surface is up but empty: a new song, with nothing published for it
+    # yet, or at all.
+    blank = False
     empty_ticks = 0
 
     while not monitor.abortRequested():
         try:
-            audio = xbmc.Player().isPlayingAudio()
+            player = xbmc.Player()
+            audio = player.isPlayingAudio()
             published = source.directory_path() if source.has_lyrics() else ""
 
             if not audio:
                 if showing:
                     presenter.stop_song()
                     showing = ""
+                blank = False
                 empty_ticks = 0
             elif not published:
                 empty_ticks += 1
+                if showing and not blank and _playing_file(player) != shown_file:
+                    # A new song: the last one's lines must not stand in for
+                    # it while kofin fetches, or when it has nothing.
+                    presenter.blank_song()
+                    blank = True
                 if showing and empty_ticks >= EMPTY_TICKS_BEFORE_STOP:
                     presenter.stop_song()
                     showing = ""
-            elif published != showing:
+                    blank = False
+            elif published != showing or blank:
                 empty_ticks = 0
                 # A new song. When it is not shown automatically, the last
                 # song's lyrics still have to go.
@@ -65,11 +86,13 @@ def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
                 else:
                     presenter.stop_song()
                 showing = published
+                shown_file = _playing_file(player)
+                blank = False
             else:
                 empty_ticks = 0
                 if _take_summons():
                     presenter.summon()
-                presenter.tick(_position())
+                presenter.tick(_position(player))
         except Exception as error:  # never let a tick kill the service
             log("tick failed: %s" % error)
 

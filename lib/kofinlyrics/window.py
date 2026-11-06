@@ -173,6 +173,19 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         self._fill()
         self._tween_to(width)
 
+    def clear_lines(self) -> None:
+        """Show no lines, keeping the panel as it is.
+
+        For the gap between a song and the next one's lines, which refill
+        the list in place; a song that has none closes the window from
+        outside.
+        """
+        self._lines = []
+        if self._list is None or not self._alive():
+            return
+        self.scrolled = False
+        self._fill()
+
     def set_target_height(self, height: int) -> None:
         """The user's panel height; applied with the next fit."""
         self._target_height = self._clamp_height(height)
