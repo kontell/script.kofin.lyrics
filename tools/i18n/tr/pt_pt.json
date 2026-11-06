@@ -8,5 +8,6 @@
   "#30005": "Desfasamento temporal (segundos)",
   "#30006": "Aumente-o se as linhas chegarem demasiado cedo e diminua-o se chegarem demasiado tarde.",
   "#30009": "Altura da janela das letras (píxeis)",
-  "#30010": "A partir do topo do ecrã. 480 deixa livre a informação de reprodução; 800 é a altura total."
+  "#30010": "A partir do topo do ecrã. 480 deixa livre a informação de reprodução; 800 é a altura total.",
+  "#30011": "Sem letra para mostrar nesta música"
 }

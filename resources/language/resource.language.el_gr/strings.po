@@ -55,3 +55,7 @@ msgstr "Ύψος παραθύρου στίχων (εικονοστοιχεία)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "Από το πάνω μέρος της οθόνης. Το 480 αφήνει ελεύθερες τις πληροφορίες αναπαραγωγής· το 800 είναι το πλήρες ύψος."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "Δεν υπάρχουν στίχοι για εμφάνιση για αυτό το τραγούδι"

@@ -55,3 +55,7 @@ msgstr "Alçada de la finestra de lletres (píxels)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "Des de la part superior de la pantalla. 480 deixa lliure la informació de reproducció; 800 és l'alçada completa."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "No hi ha cap lletra per mostrar d'aquesta cançó"

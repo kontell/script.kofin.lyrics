@@ -8,5 +8,6 @@
   "#30005": "Desfase de tiempo (segundos)",
   "#30006": "Súbelo si las líneas llegan demasiado pronto y bájalo si llegan demasiado tarde.",
   "#30009": "Altura de la ventana de letras (píxeles)",
-  "#30010": "Desde la parte superior de la pantalla. 480 deja libre la información de reproducción; 800 es la altura completa."
+  "#30010": "Desde la parte superior de la pantalla. 480 deja libre la información de reproducción; 800 es la altura completa.",
+  "#30011": "No hay letra que mostrar para esta canción"
 }

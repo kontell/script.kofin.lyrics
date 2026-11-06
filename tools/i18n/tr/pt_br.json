@@ -8,5 +8,6 @@
   "#30005": "Deslocamento de tempo (segundos)",
   "#30006": "Aumente se as linhas vierem cedo demais e diminua se vierem tarde demais.",
   "#30009": "Altura da janela de letras (pixels)",
-  "#30010": "A partir do topo da tela. 480 deixa livre a informação de reprodução; 800 é a altura total."
+  "#30010": "A partir do topo da tela. 480 deixa livre a informação de reprodução; 800 é a altura total.",
+  "#30011": "Nenhuma letra para exibir nesta música"
 }

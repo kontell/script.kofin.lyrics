@@ -55,3 +55,7 @@ msgstr "Înălțimea ferestrei de versuri (pixeli)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "De la marginea de sus a ecranului. 480 lasă liberă informația de redare; 800 înseamnă toată înălțimea."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "Nu există versuri de afișat pentru această melodie"

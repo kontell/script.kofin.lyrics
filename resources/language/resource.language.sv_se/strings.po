@@ -55,3 +55,7 @@ msgstr "Höjd på låttextfönstret (pixlar)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "Från skärmens överkant. 480 lämnar uppspelningsinformationen fri; 800 är full höjd."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "Ingen låttext att visa för den här låten"

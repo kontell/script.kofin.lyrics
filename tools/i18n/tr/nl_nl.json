@@ -8,5 +8,6 @@
   "#30005": "Tijdverschuiving (seconden)",
   "#30006": "Verhoog de waarde als regels te vroeg komen en verlaag die als ze te laat komen.",
   "#30009": "Hoogte van het songtekstvenster (pixels)",
-  "#30010": "Vanaf de bovenkant van het scherm. 480 laat de afspeelinformatie vrij; 800 is de volledige hoogte."
+  "#30010": "Vanaf de bovenkant van het scherm. 480 laat de afspeelinformatie vrij; 800 is de volledige hoogte.",
+  "#30011": "Geen songtekst om te tonen voor dit nummer"
 }

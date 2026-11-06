@@ -55,3 +55,7 @@ msgstr "Výška okna s texty (pixely)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "Od horního okraje obrazovky. 480 nezakrývá informace o přehrávání; 800 je plná výška."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "Pro tuto skladbu není žádný text k zobrazení"

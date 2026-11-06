@@ -8,5 +8,6 @@
   "#30005": "Timing offset (seconds)",
   "#30006": "Raise it if lines come too early, lower it if they come too late.",
   "#30009": "Lyrics window height (pixels)",
-  "#30010": "From the top of the screen. 480 clears the now-playing info; 800 is full height."
+  "#30010": "From the top of the screen. 480 clears the now-playing info; 800 is full height.",
+  "#30011": "No lyrics to show for this song"
 }

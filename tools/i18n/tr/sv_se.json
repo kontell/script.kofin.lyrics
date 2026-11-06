@@ -8,5 +8,6 @@
   "#30005": "Tidsförskjutning (sekunder)",
   "#30006": "Höj den om raderna kommer för tidigt och sänk den om de kommer för sent.",
   "#30009": "Höjd på låttextfönstret (pixlar)",
-  "#30010": "Från skärmens överkant. 480 lämnar uppspelningsinformationen fri; 800 är full höjd."
+  "#30010": "Från skärmens överkant. 480 lämnar uppspelningsinformationen fri; 800 är full höjd.",
+  "#30011": "Ingen låttext att visa för den här låten"
 }

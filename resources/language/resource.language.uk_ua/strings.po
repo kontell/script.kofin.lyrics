@@ -55,3 +55,7 @@ msgstr "Висота вікна текстів (пікселі)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "Від верхнього краю екрана. 480 залишає відкритою інформацію про відтворення; 800 — повна висота."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "Для цієї пісні немає тексту для показу"
