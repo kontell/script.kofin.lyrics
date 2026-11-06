@@ -55,3 +55,7 @@ msgstr "가사 창 높이(픽셀)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "화면 위쪽부터의 높이입니다. 480은 재생 정보를 가리지 않고, 800은 전체 높이입니다."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "이 곡에는 표시할 가사가 없습니다"

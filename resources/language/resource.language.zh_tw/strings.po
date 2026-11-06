@@ -55,3 +55,7 @@ msgstr "歌詞視窗高度（像素）"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "從螢幕頂端算起。480 不會遮住正在播放的資訊；800 為全螢幕高度。"
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "此歌曲沒有可顯示的歌詞"

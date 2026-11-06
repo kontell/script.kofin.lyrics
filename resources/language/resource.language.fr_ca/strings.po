@@ -55,3 +55,7 @@ msgstr "Hauteur de la fenêtre des paroles (pixels)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "Depuis le haut de l'écran. 480 laisse visibles les informations de lecture en cours ; 800 occupe toute la hauteur."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "Aucunes paroles à afficher pour cette chanson"

@@ -8,5 +8,6 @@
   "#30005": "Scarto temporale (secondi)",
   "#30006": "Aumentalo se le righe arrivano troppo presto, diminuiscilo se arrivano troppo tardi.",
   "#30009": "Altezza della finestra dei testi (pixel)",
-  "#30010": "Dal bordo superiore dello schermo. 480 lascia libere le informazioni di riproduzione; 800 è l'altezza piena."
+  "#30010": "Dal bordo superiore dello schermo. 480 lascia libere le informazioni di riproduzione; 800 è l'altezza piena.",
+  "#30011": "Nessun testo da mostrare per questo brano"
 }

@@ -55,3 +55,7 @@ msgstr "Hoogte van het songtekstvenster (pixels)"
 msgctxt "#30010"
 msgid "From the top of the screen. 480 clears the now-playing info; 800 is full height."
 msgstr "Vanaf de bovenkant van het scherm. 480 laat de afspeelinformatie vrij; 800 is de volledige hoogte."
+
+msgctxt "#30011"
+msgid "No lyrics to show for this song"
+msgstr "Geen songtekst om te tonen voor dit nummer"

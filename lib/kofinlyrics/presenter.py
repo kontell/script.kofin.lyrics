@@ -14,6 +14,7 @@ import xbmcgui
 
 from kofinlyrics import lyrics as source
 from kofinlyrics import paging, settings
+from kofinlyrics.summon import notify_no_lyrics
 from kofinlyrics.window import (
     FULL_HEIGHT,
     XML_FILENAME,
@@ -172,6 +173,8 @@ class Presenter:
             # dismissed earlier in this song.
             self.start_song()
             if not self._lines:
+                # Nothing published, or untimed lyrics that are turned off.
+                notify_no_lyrics()
                 return
         if source.skin_control_id() and not self._interactive:
             self._interactive = True

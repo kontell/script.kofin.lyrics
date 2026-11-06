@@ -8,5 +8,6 @@
   "#30005": "Ajoituksen siirtymä (sekuntia)",
   "#30006": "Kasvata arvoa, jos rivit tulevat liian aikaisin, ja pienennä sitä, jos ne tulevat liian myöhään.",
   "#30009": "Sanoitusikkunan korkeus (pikseliä)",
-  "#30010": "Näytön yläreunasta. 480 jättää toistotiedot näkyviin; 800 on koko korkeus."
+  "#30010": "Näytön yläreunasta. 480 jättää toistotiedot näkyviin; 800 on koko korkeus.",
+  "#30011": "Tälle kappaleelle ei ole näytettäviä sanoituksia"
 }

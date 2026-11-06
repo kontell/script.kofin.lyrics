@@ -8,5 +8,6 @@
   "#30005": "Időeltolás (másodperc)",
   "#30006": "Növelje, ha a sorok túl korán jönnek, és csökkentse, ha túl későn.",
   "#30009": "A dalszövegablak magassága (képpont)",
-  "#30010": "A képernyő tetejétől. A 480 szabadon hagyja a lejátszási információkat; a 800 a teljes magasság."
+  "#30010": "A képernyő tetejétől. A 480 szabadon hagyja a lejátszási információkat; a 800 a teljes magasság.",
+  "#30011": "Nincs megjeleníthető dalszöveg ehhez a dalhoz"
 }
