@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "Vis sangtekster automatisk"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "Vis sangteksten, når hver sang starter, ikke kun når der trykkes på sangtekstknappen. Nogle skins ignorerer dette."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "Vis sangteksten, når hver sang starter, ikke kun når der trykkes på sangtekstknappen."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "Vis usynkroniserede sangtekster"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "Usynkroniserede sangtekster står stille i stedet for at følge sangen. Nogle skins ignorerer dette."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "Usynkroniserede sangtekster står stille i stedet for at følge sangen."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "歌詞を自動的に表示"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "歌詞ボタンを押したときだけでなく、各曲の開始時に歌詞を表示します。一部のスキンはこの設定を無視します。"
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "歌詞ボタンを押したときだけでなく、各曲の開始時に歌詞を表示します。"
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "同期されていない歌詞を表示"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "同期されていない歌詞は曲に合わせて動かず、そのまま表示されます。一部のスキンはこの設定を無視します。"
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "同期されていない歌詞は曲に合わせて動かず、そのまま表示されます。"
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "自动显示歌词"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "每首歌开始时显示歌词，而不仅是在按下歌词按钮时。部分皮肤会忽略此设置。"
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "每首歌开始时显示歌词，而不仅是在按下歌词按钮时。"
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "显示未同步的歌词"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "未同步的歌词会保持静止，而不是跟随歌曲滚动。部分皮肤会忽略此设置。"
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "未同步的歌词会保持静止，而不是跟随歌曲滚动。"
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

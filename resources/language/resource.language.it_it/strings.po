@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "Mostra i testi automaticamente"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "Mostra il testo all'inizio di ogni brano, non solo quando premi il pulsante dei testi. Alcune skin lo ignorano."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "Mostra il testo all'inizio di ogni brano, non solo quando premi il pulsante dei testi."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "Mostra i testi non sincronizzati"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "I testi non sincronizzati restano fermi invece di seguire il brano. Alcune skin lo ignorano."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "I testi non sincronizzati restano fermi invece di seguire il brano."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

@@ -8,7 +8,7 @@ msgstr ""
 "Language: en_GB\n"
 
 # Kodi shows the add-on's summary and description from addon.xml; these copies
-# are what gets translated. Keep them in step with its en_GB text.
+# are what gets translated. Keep them in step with addon.xml, in every language.
 
 msgctxt "Addon Summary"
 msgid "Song lyrics from your Jellyfin server"
@@ -23,7 +23,7 @@ msgid "Show lyrics automatically"
 msgstr ""
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
 msgstr ""
 
 msgctxt "#30003"
@@ -31,7 +31,7 @@ msgid "Show lyrics that have no timings"
 msgstr ""
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
+msgid "Untimed lyrics stay still instead of following the song."
 msgstr ""
 
 msgctxt "#30005"

@@ -85,8 +85,9 @@ Rewording an existing string means step 4 as well — `gen.py` will say so.
 ## The add-on's summary and description
 
 Kodi shows these from `addon.xml`, not from the language files.
-The `Addon Summary` and `Addon Description` entries keep them translated alongside everything else, and must match `addon.xml`'s en_GB text.
-Nothing copies the translations into `addon.xml` yet, so Kodi's add-on browser still shows the English.
+The `Addon Summary` and `Addon Description` entries keep them translated alongside everything else.
+`addon.xml` carries the same text for every locale: its en_GB text matches the English source, and each other `lang` matches that locale's msgstr.
+Nothing generates those tags, so a reworded summary or description has to be copied into `addon.xml` by hand.
 
 ## Adding a locale
 
