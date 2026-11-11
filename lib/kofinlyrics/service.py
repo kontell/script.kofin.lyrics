@@ -12,7 +12,7 @@ import xbmcgui
 from kofinlyrics import lyrics as source
 from kofinlyrics import settings
 from kofinlyrics.presenter import Presenter, log
-from kofinlyrics.summon import PROP_SUMMON
+from kofinlyrics.summon import PROP_SUMMON, notify_no_lyrics
 
 TICK_SECONDS = 0.25
 
@@ -45,52 +45,65 @@ def _take_summons() -> bool:
 
 
 def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
-    # The published path carries the song id, so it changes with every song.
+    # Last published path we consumed. Empty while waiting on a fetch.
     showing = ""
-    # The file that was playing when it was taken up.
+    # Playing file for that path; a change while unpublished blanks.
     shown_file = ""
-    # The surface is up but empty: a new song, with nothing published for it
-    # yet, or at all.
-    blank = False
     empty_ticks = 0
+    pending_summon = False
 
     while not monitor.abortRequested():
         try:
             player = xbmc.Player()
             audio = player.isPlayingAudio()
             published = source.directory_path() if source.has_lyrics() else ""
+            if _take_summons():
+                pending_summon = True
 
             if not audio:
-                if showing:
+                if presenter.holding():
                     presenter.stop_song()
-                    showing = ""
-                blank = False
+                showing = ""
+                shown_file = ""
                 empty_ticks = 0
+                pending_summon = False
             elif not published:
-                empty_ticks += 1
-                if showing and not blank and _playing_file(player) != shown_file:
-                    # A new song: the last one's lines must not stand in for
-                    # it while kofin fetches, or when it has nothing.
-                    presenter.blank_song()
-                    blank = True
-                if showing and empty_ticks >= EMPTY_TICKS_BEFORE_STOP:
-                    presenter.stop_song()
-                    showing = ""
-                    blank = False
-            elif published != showing or blank:
+                playing = _playing_file(player)
+                if playing != shown_file:
+                    if presenter.holding():
+                        presenter.blank_song()
+                    shown_file = playing
+                    empty_ticks = 1
+                else:
+                    empty_ticks += 1
+                if empty_ticks >= EMPTY_TICKS_BEFORE_STOP:
+                    if presenter.holding():
+                        presenter.stop_song()
+                        showing = ""
+                    if pending_summon:
+                        notify_no_lyrics()
+                        pending_summon = False
+            elif published != showing:
                 empty_ticks = 0
-                # A new song. When it is not shown automatically, the last
-                # song's lyrics still have to go.
-                if settings.show_automatically():
+                # A new path. Auto-off closes even a summoned window; a press
+                # during the fetch is pending_summon and still shows.
+                if pending_summon:
+                    pending_summon = False
+                    presenter.summon()
+                elif settings.show_automatically():
                     presenter.start_song()
                 else:
                     presenter.stop_song()
                 showing = published
                 shown_file = _playing_file(player)
-                blank = False
             else:
                 empty_ticks = 0
-                if _take_summons():
+                if presenter.awaiting_lines():
+                    # Same path after a blank: repeat-one with a per-play URL.
+                    presenter.start_song()
+                    shown_file = _playing_file(player)
+                if pending_summon:
+                    pending_summon = False
                     presenter.summon()
                 presenter.tick(_position(player))
         except Exception as error:  # never let a tick kill the service
