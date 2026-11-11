@@ -14,6 +14,7 @@ import xbmcgui
 
 from kofinlyrics import lyrics as source
 from kofinlyrics import paging, settings
+from kofinlyrics.summon import notify_no_lyrics
 from kofinlyrics.window import (
     FULL_HEIGHT,
     XML_FILENAME,
@@ -105,6 +106,7 @@ class Presenter:
         self._skin_stale = True
         # Rows the skin's overlay currently shows.
         self._skin_visible = SKIN_PAGE_ROWS
+        self._up = False  # surface is up, including empty between songs
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -134,6 +136,7 @@ class Presenter:
         if not timed:
             self._rewind_skin_list()
         source.set_show(True)
+        self._up = True
         log("%d lines%s" % (len(lines), "" if timed else " (untimed)"))
 
     def stop_song(self) -> None:
@@ -145,6 +148,30 @@ class Presenter:
         self._lines = []
         self._sent = None
         self._following = False
+        self._up = False
+
+    def blank_song(self) -> None:
+        """Take the last song's lines down for a new song that nothing has
+        been published for, yet or at all.
+
+        The window stays up, empty, for the grace the service gives kofin's
+        fetch: lines that arrive refill it in place, and none closes it by
+        stop_song. A skin's list is kofin's directory, which kofin has
+        already cleared.
+        """
+        self._lines = []
+        self._sent = None
+        self._following = False
+        if self._window is not None and not self._window.closed:
+            self._window.clear_lines()
+
+    def holding(self) -> bool:
+        """Whether a surface is still up, including empty between songs."""
+        return self._up
+
+    def awaiting_lines(self) -> bool:
+        """Held empty so a fetch can refill it in place."""
+        return self._up and not self._lines
 
     def summon(self) -> None:
         """Hand the lyrics to our own window for scrolling by hand.
@@ -157,6 +184,8 @@ class Presenter:
             # dismissed earlier in this song.
             self.start_song()
             if not self._lines:
+                # Nothing published, or untimed lyrics that are turned off.
+                notify_no_lyrics()
                 return
         if source.skin_control_id() and not self._interactive:
             self._interactive = True
@@ -320,6 +349,7 @@ class Presenter:
                 self._sent = None
             else:
                 self._lines = []  # dismissed; leave it shut for this song
+                self._up = False
             return
         self._window.refit()
         if not self._following or self._window.scrolled:

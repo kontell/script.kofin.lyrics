@@ -8,5 +8,6 @@
   "#30005": "Časový posun (sekundy)",
   "#30006": "Zvýšte ho, ak riadky prichádzajú príliš skoro, a znížte, ak príliš neskoro.",
   "#30009": "Výška okna s textami (pixely)",
-  "#30010": "Od horného okraja obrazovky. 480 nezakrýva informácie o prehrávaní; 800 je plná výška."
+  "#30010": "Od horného okraja obrazovky. 480 nezakrýva informácie o prehrávaní; 800 je plná výška.",
+  "#30011": "Pre túto skladbu nie je žiadny text na zobrazenie"
 }

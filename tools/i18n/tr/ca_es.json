@@ -8,5 +8,6 @@
   "#30005": "Desfasament (segons)",
   "#30006": "Augmenteu-lo si les línies arriben massa d'hora i reduïu-lo si arriben massa tard.",
   "#30009": "Alçada de la finestra de lletres (píxels)",
-  "#30010": "Des de la part superior de la pantalla. 480 deixa lliure la informació de reproducció; 800 és l'alçada completa."
+  "#30010": "Des de la part superior de la pantalla. 480 deixa lliure la informació de reproducció; 800 és l'alçada completa.",
+  "#30011": "No hi ha cap lletra per mostrar d'aquesta cançó"
 }

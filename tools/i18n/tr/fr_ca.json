@@ -8,5 +8,6 @@
   "#30005": "Décalage temporel (secondes)",
   "#30006": "Augmentez-le si les lignes arrivent trop tôt, diminuez-le si elles arrivent trop tard.",
   "#30009": "Hauteur de la fenêtre des paroles (pixels)",
-  "#30010": "Depuis le haut de l'écran. 480 laisse visibles les informations de lecture en cours ; 800 occupe toute la hauteur."
+  "#30010": "Depuis le haut de l'écran. 480 laisse visibles les informations de lecture en cours ; 800 occupe toute la hauteur.",
+  "#30011": "Aucunes paroles à afficher pour cette chanson"
 }

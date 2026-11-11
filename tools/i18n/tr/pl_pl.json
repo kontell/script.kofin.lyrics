@@ -8,5 +8,6 @@
   "#30005": "Przesunięcie czasu (sekundy)",
   "#30006": "Zwiększ je, jeśli wiersze pojawiają się za wcześnie, a zmniejsz, jeśli za późno.",
   "#30009": "Wysokość okna tekstów (piksele)",
-  "#30010": "Od górnej krawędzi ekranu. 480 nie zasłania informacji o odtwarzaniu; 800 to pełna wysokość."
+  "#30010": "Od górnej krawędzi ekranu. 480 nie zasłania informacji o odtwarzaniu; 800 to pełna wysokość.",
+  "#30011": "Brak tekstu do wyświetlenia dla tego utworu"
 }

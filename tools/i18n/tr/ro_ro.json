@@ -8,5 +8,6 @@
   "#30005": "Decalaj de timp (secunde)",
   "#30006": "Măriți-l dacă rândurile apar prea devreme și micșorați-l dacă apar prea târziu.",
   "#30009": "Înălțimea ferestrei de versuri (pixeli)",
-  "#30010": "De la marginea de sus a ecranului. 480 lasă liberă informația de redare; 800 înseamnă toată înălțimea."
+  "#30010": "De la marginea de sus a ecranului. 480 lasă liberă informația de redare; 800 înseamnă toată înălțimea.",
+  "#30011": "Nu există versuri de afișat pentru această melodie"
 }
