@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "Afișează versurile automat"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "Afișează versurile la începutul fiecărei piese, nu doar când apăsați butonul de versuri. Unele interfețe ignoră acest lucru."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "Afișează versurile la începutul fiecărei piese, nu doar când apăsați butonul de versuri."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "Afișează versurile nesincronizate"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "Versurile nesincronizate rămân pe loc în loc să urmărească piesa. Unele interfețe ignoră acest lucru."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "Versurile nesincronizate rămân pe loc în loc să urmărească piesa."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

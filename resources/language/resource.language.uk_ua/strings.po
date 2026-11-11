@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "Показувати тексти автоматично"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "Показувати текст на початку кожної пісні, а не лише після натискання кнопки текстів. Деякі скіни це ігнорують."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "Показувати текст на початку кожної пісні, а не лише після натискання кнопки текстів."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "Показувати несинхронізовані тексти"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "Несинхронізовані тексти залишаються нерухомими, а не рухаються за піснею. Деякі скіни це ігнорують."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "Несинхронізовані тексти залишаються нерухомими, а не рухаються за піснею."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

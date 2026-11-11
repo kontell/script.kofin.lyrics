@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "Zobrazovať texty automaticky"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "Zobrazí text na začiatku každej piesne, nielen po stlačení tlačidla textov. Niektoré vzhľady to ignorujú."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "Zobrazí text na začiatku každej piesne, nielen po stlačení tlačidla textov."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "Zobrazovať nesynchronizované texty"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "Nesynchronizované texty stoja na mieste namiesto toho, aby sledovali pieseň. Niektoré vzhľady to ignorujú."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "Nesynchronizované texty stoja na mieste namiesto toho, aby sledovali pieseň."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

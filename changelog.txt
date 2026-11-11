@@ -1,3 +1,7 @@
+v0.3.2
+• Removed "Some skins ignore this" from two settings tooltips
+• Translated the summary and description
+
 v0.3.1
 • Fixed lyrics stuck on the top row and scrolling in jumps on Kodi 22
 • Fixed untimed lyrics opening mid-song

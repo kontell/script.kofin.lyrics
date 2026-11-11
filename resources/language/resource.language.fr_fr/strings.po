@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "Afficher les paroles automatiquement"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "Affiche les paroles au début de chaque chanson, et pas seulement lorsque vous appuyez sur le bouton des paroles. Certains habillages ignorent ce réglage."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "Affiche les paroles au début de chaque chanson, et pas seulement lorsque vous appuyez sur le bouton des paroles."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "Afficher les paroles non synchronisées"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "Les paroles non synchronisées restent fixes au lieu de suivre la chanson. Certains habillages ignorent ce réglage."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "Les paroles non synchronisées restent fixes au lieu de suivre la chanson."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

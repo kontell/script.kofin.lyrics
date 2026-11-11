@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "Αυτόματη εμφάνιση στίχων"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "Εμφανίζει τους στίχους μόλις ξεκινά κάθε τραγούδι, όχι μόνο όταν πατάτε το κουμπί στίχων. Ορισμένα κελύφη το αγνοούν."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "Εμφανίζει τους στίχους μόλις ξεκινά κάθε τραγούδι, όχι μόνο όταν πατάτε το κουμπί στίχων."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "Εμφάνιση μη συγχρονισμένων στίχων"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "Οι μη συγχρονισμένοι στίχοι μένουν σταθεροί αντί να ακολουθούν το τραγούδι. Ορισμένα κελύφη το αγνοούν."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "Οι μη συγχρονισμένοι στίχοι μένουν σταθεροί αντί να ακολουθούν το τραγούδι."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"

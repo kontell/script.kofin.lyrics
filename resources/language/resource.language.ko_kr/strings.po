@@ -29,16 +29,16 @@ msgid "Show lyrics automatically"
 msgstr "가사 자동 표시"
 
 msgctxt "#30002"
-msgid "Show lyrics as each song starts, not only when the lyrics button is pressed. Some skins ignore this."
-msgstr "가사 버튼을 누를 때뿐 아니라 각 노래가 시작될 때 가사를 표시합니다. 일부 스킨은 이 설정을 무시합니다."
+msgid "Show lyrics as each song starts, not only when the lyrics button is pressed."
+msgstr "가사 버튼을 누를 때뿐 아니라 각 노래가 시작될 때 가사를 표시합니다."
 
 msgctxt "#30003"
 msgid "Show lyrics that have no timings"
 msgstr "동기화되지 않은 가사 표시"
 
 msgctxt "#30004"
-msgid "Untimed lyrics stay still instead of following the song. Some skins ignore this."
-msgstr "동기화되지 않은 가사는 노래를 따라가지 않고 그대로 있습니다. 일부 스킨은 이 설정을 무시합니다."
+msgid "Untimed lyrics stay still instead of following the song."
+msgstr "동기화되지 않은 가사는 노래를 따라가지 않고 그대로 있습니다."
 
 msgctxt "#30005"
 msgid "Timing offset (seconds)"
