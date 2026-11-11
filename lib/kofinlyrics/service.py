@@ -86,9 +86,12 @@ def _loop(monitor: xbmc.Monitor, presenter: Presenter) -> None:
             elif published != showing:
                 empty_ticks = 0
                 # A new path. Auto-off closes even a summoned window; a press
-                # during the fetch is pending_summon and still shows.
+                # during the fetch is pending_summon and still shows. Load the
+                # new lines first: summon() keeps _lines when they are already
+                # set, which is the last song if this tick missed the blank.
                 if pending_summon:
                     pending_summon = False
+                    presenter.start_song()
                     presenter.summon()
                 elif settings.show_automatically():
                     presenter.start_song()
