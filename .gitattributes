@@ -4,6 +4,9 @@
 /.github export-ignore
 /.gitattributes export-ignore
 /.gitignore export-ignore
+# Kodi reads changelog.txt only when addon.xml's <news> is empty, so it
+# stays out of the zip; build.py and the release workflow read it here.
+/changelog.txt export-ignore
 /mypy.ini export-ignore
 /requirements-dev.txt export-ignore
 /tools export-ignore

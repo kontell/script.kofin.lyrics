@@ -17,7 +17,7 @@ from typing import Any, List, Optional, cast
 import xbmc
 import xbmcgui
 
-from kofinlyrics import paging
+from . import paging
 
 LIST_ID = 100
 PANEL_ID = 101
@@ -127,6 +127,7 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
         self._target_height: int = self._clamp_height(
             int(kwargs.pop("height", FULL_HEIGHT))
         )
+        self._monitor: xbmc.Monitor = kwargs.pop("monitor")
         super().__init__(*args)
         self.closed = False
         # Closed by the viewer (stay shut this song), not by Kodi (reopen).
@@ -274,7 +275,8 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
 
         Stepped writes are the only way to animate it: Python cannot trigger
         skin animations, and skin geometry cannot bind a property. Steps
-        follow the clock, as xbmc.sleep overruns while it pumps callbacks.
+        follow the clock, as waitForAbort overruns while it pumps callbacks.
+        Kodi stopping the add-on ends it where it is.
         """
         if self._width == 0 or abs(width - self._width) <= TWEEN_SNAP_PX:
             self._fit(width)
@@ -289,7 +291,8 @@ class LyricsWindow(xbmcgui.WindowXMLDialog):
                 break
             eased = (1 - math.cos(math.pi * part)) / 2
             self._fit(round(start + (width - start) * eased))
-            xbmc.sleep(TWEEN_STEP_MS)
+            if self._monitor.waitForAbort(TWEEN_STEP_MS / 1000):
+                return
         self._fit(width)
 
     def _fit(self, width: int) -> None:

@@ -10,7 +10,7 @@ import time
 import xbmcaddon
 import xbmcgui
 
-from kofinlyrics import lyrics as source
+from . import lyrics as source
 
 PROP_SUMMON = "kofin.lyric.summon"
 

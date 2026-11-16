@@ -12,10 +12,10 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 
-from kofinlyrics import lyrics as source
-from kofinlyrics import paging, settings
-from kofinlyrics.summon import notify_no_lyrics
-from kofinlyrics.window import (
+from . import lyrics as source
+from . import paging, settings
+from .summon import notify_no_lyrics
+from .window import (
     FULL_HEIGHT,
     XML_FILENAME,
     LyricsWindow,
@@ -380,6 +380,7 @@ class Presenter:
                 "1080i",
                 lines=[text for _, text in self._lines],
                 height=settings.window_height(),
+                monitor=self._monitor,
             )
             window.show()
             self._window = window
