@@ -9,10 +9,10 @@ from typing import Optional
 import xbmc
 import xbmcgui
 
-from kofinlyrics import lyrics as source
-from kofinlyrics import settings
-from kofinlyrics.presenter import Presenter, log
-from kofinlyrics.summon import PROP_SUMMON, notify_no_lyrics
+from . import lyrics as source
+from . import settings
+from .presenter import Presenter, log
+from .summon import PROP_SUMMON, notify_no_lyrics
 
 TICK_SECONDS = 0.25
 

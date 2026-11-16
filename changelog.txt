@@ -1,3 +1,7 @@
+v0.3.3
+• Added fanart
+• Tidied the code for the Kodi repository's add-on check
+
 v0.3.2
 • Removed "Some skins ignore this" from two settings tooltips
 • Translated the summary and description
